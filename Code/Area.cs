@@ -1,0 +1,30 @@
+﻿using MyUtil;
+using static 悲愴三国志Zero2_1.Code.DefType;
+namespace 悲愴三国志Zero2_1.Code {
+	internal static class Area {
+		private static ScenarioData.Road[]? GetRoads(Game game) => ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.RoadConnections;
+		private static Point ConvertPointFromAreaPosition(Point areaPosition) => new(areaPosition.X*BaseData.areaButtonLeft+BaseData.areaButtonWidth/2,areaPosition.Y*BaseData.areaButtonTop+BaseData.areaButtonHeight/2);
+		internal static Point? GetAreaPoint(Game game,EArea areaName) => ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.AreaMap.GetValueOrDefault(areaName)?.Position.MyApplyF(ConvertPointFromAreaPosition);
+		internal static EArea? GetCapitalArea(Game game,ECountry countryName) => game.CountryMap.GetValueOrDefault(countryName)?.CapitalArea;
+		internal static EArea? ComputeCapitalArea(Game game,ECountry countryName) => countryName==ECountry.漢 ? null : GetCountryAreaInfoMap(game,countryName).MyNullable().MaxBy(v => v?.Value.AffairParam.AffairNow)?.Key;
+		internal static Dictionary<EArea,AreaInfo> GetCountryAreaInfoMap(Game game,ECountry country) => game.AreaMap.Where(v => v.Value.Country==country).ToDictionary();
+		internal static List<EArea> GetAdjacentAnotherCountryAllAreas(Game game,ECountry country) => [.. GetCountryAreaInfoMap(game,country).SelectMany(areaInfo => GetAdjacentAnotherCountryAreas(game,country,areaInfo.Key)).Distinct()];
+		internal static bool IsPlayerSelectable(Game game,EArea? area) => area==null||(game.PlayCountry?.MyApplyF(playCountry => GetAdjacentAnotherCountryAllAreas(game,playCountry).Concat(GetCountryAreaInfoMap(game,playCountry).Keys)).Contains(area.Value)??true);
+		internal static List<EArea> GetAdjacentAnotherCountryAreas(Game game,ECountry country,EArea area) => [.. GetAdjacentAreas(area,GetRoads(game)).Except(GetCountryAreaInfoMap(game,country).Keys)];
+		internal static List<EArea> GetAdjacentTargetCountryAreas(Game game,ECountry country,EArea area) => [.. GetAdjacentAreas(area,GetRoads(game)).Intersect(GetCountryAreaInfoMap(game,country).Keys)];
+		private static List<EArea> GetAdjacentAreas(EArea area,ScenarioData.Road[]? roads) => [.. roads?.Where(v => v.From==area).Select(v => v.To)?? [],.. roads?.Where(v => v.To==area).Select(v => v.From)?? []];
+		internal static int? GetAreaDistance(Game game,ECountry country,EArea src,EArea dst) => new List<EArea[]>([[src]]).MyApplyF(v => RecGetAreaDistances(game,country,v).ToList()).MyGetIndex(v => v.Contains(dst));
+		private static List<EArea[]> RecGetAreaDistances(Game game,ECountry country,List<EArea[]> confirm) => GetMoreOneDistanceAreas(game,country,confirm).MyApplyF(v => v.Length==0 ? confirm : RecGetAreaDistances(game,country,[.. confirm,v]));
+		private static EArea[] GetMoreOneDistanceAreas(Game game,ECountry country,List<EArea[]> map) => [.. map.Last().SelectMany(v => GetAdjacentTargetCountryAreas(game,country,v)).Distinct().Except(map.SelectMany(v => v))];
+		internal static List<EArea> CalcOrdDefenseAreas(Game game,ECountry country) {
+			return [.. GetCountryAreaInfoMap(game,country).OrderByDescending(v => ComputeAreaPressure(game,v)).Select(v => v.Key)];
+			static decimal ComputeAreaPressure(Game game,KeyValuePair<EArea,AreaInfo> area) => ComputeAdjacentAnotherCountryAreas(game,area).Select(adjacent => AdjacentAreaPersonRank(game,adjacent)+1).Sum();
+			static decimal AdjacentAreaPersonRank(Game game,EArea adjacent) => Country.GetAreaCountry(game,adjacent)?.MyApplyF(v => Person.GetPostPerson(game,v,new(ERole.defense,new(adjacent)))?.Value)?.MyApplyF(v => Person.CalcRank(v,ERole.defense))??0m;
+			static List<EArea> ComputeAdjacentAnotherCountryAreas(Game game,KeyValuePair<EArea,AreaInfo> area) => area.Value.Country?.MyApplyF(country => GetAdjacentAnotherCountryAreas(game,country,area.Key))?? [];
+		}
+		internal static List<EArea> CalcOrdAffairAreas(Game game,ECountry country) {
+			return [.. GetCountryAreaInfoMap(game,country).OrderByDescending(v => ComputeAreaRemAffairs(game,v)).Select(v => v.Key)];
+			static decimal ComputeAreaRemAffairs(Game game,KeyValuePair<EArea,AreaInfo> area) => area.Value.AffairParam.MyApplyF(v => v.AffairsMax-v.AffairNow);
+		}
+	}
+}
