@@ -35,9 +35,15 @@ namespace 悲愴三国志Zero2_1.Code {
 			static Game Lose(Game game,ECountry attackSide,EArea target) => SleepCountry(game,attackSide,1).MyApplyF(game => DamageArea(game,target));
 			static Game Rout(Game game,ECountry attackSide,EArea target,Army attack) => SleepCountry(game,attackSide,3).MyApplyF(game => DeathCommander(game,attack.Commander,ERole.attack)).MyApplyF(game => DamageArea(game,target));
 			static Game ChangeHasCountry(Game game,ECountry attackCountry,ECountry? defenseCountry,EArea targetArea) {
-				return AppendLogMessage(game,[$"{Text.GetCountryText(defenseCountry,Lang.ja)}領の{targetArea}が{attackCountry}領に"]).MyApplyF(game => UpdateAreaMap(game,attackCountry,targetArea)).MyApplyF(game => MakeEmptyPost(game,targetArea));
+				return AppendLogMessage(game,[Text.ChangeHasCountryText(attackCountry,defenseCountry,targetArea,Lang.ja)]).MyApplyF(game => UpdateAreaMap(game,attackCountry,targetArea)).MyApplyF(game => MakeEmptyPost(game,targetArea)).MyApplyF(game => IsFallCapital(game,targetArea,defenseCountry) ? FallCapital(game,defenseCountry) : game);
 				static Game UpdateAreaMap(Game game,ECountry attackCountry,EArea targetArea) => game with { AreaMap=game.AreaMap.MyUpdate(targetArea,(_,areaInfo) => areaInfo with { Country=attackCountry }) };
 				static Game MakeEmptyPost(Game game,EArea targetArea) => game with { PersonMap=game.PersonMap.ToDictionary(v => v.Key,v => v.Value.Post?.PostKind!=new PostKind(targetArea) ? v.Value : v.Value with { Post=null }) };
+				static bool IsFallCapital(Game game,EArea targetArea,ECountry? defenseCountry) => defenseCountry?.MyApplyF(game.CountryMap.GetValueOrDefault)?.CapitalArea==targetArea;
+				static Game FallCapital(Game game,ECountry? defenseCountry) {
+					List<PersonType> defenseCountryCapitalPerson = [..game.PersonMap.Where(v => v.Value.Country==defenseCountry&&v.Value.Post.MyApplyF(v => v?.PostKind.MaybeHead!=null||v?.PostKind.MaybePostNo!=null)).Select(v=>v.Key)];
+					List<PersonType> deathPerson = [..defenseCountryCapitalPerson.Where(_=>MyRandom.RandomJudge(0.5))];
+					return (game with { PersonMap=game.PersonMap.ToDictionary(v => v.Key,v => deathPerson.Contains(v.Key) ? v.Value with { Post=null,DeathYear=Turn.GetYear(game) } : v.Value) }).MyApplyF(game => AppendLogMessage(game,[Text.FallCapitalText(defenseCountry,deathPerson,Lang.ja)]));
+				}
 			}
 			static Game FallArea(Game game,EArea targetArea) {
 				return game with { AreaMap=game.AreaMap.MyUpdate(targetArea,(_,areaInfo) => areaInfo with { AffairParam=areaInfo.AffairParam with { AffairNow=Math.Round(areaInfo.AffairParam.AffairNow*0.9m,4),AffairsMax=Math.Round(areaInfo.AffairParam.AffairsMax*0.95m,4) } }) };
