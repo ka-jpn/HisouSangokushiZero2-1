@@ -214,8 +214,8 @@ namespace 悲愴三国志Zero2_1 {
 					}
 				}
 			}
-			static void UpdateAreaUI(MainPage page,Game game,Dictionary<ECountry,EArea?> armyTarget) {
-				page.MapElementsCanvas.MySetChildren([.. ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.RoadConnections.Select(road => CreateRoadLine(game,road))?? [],.. game.AreaMap.Select(info => CreateAreaPanel(page,game,info,armyTarget))]);
+			static void UpdateAreaUI(MainPage page,Game game,Dictionary<ECountry,EArea?> armyTargetMap) {
+				page.MapElementsCanvas.MySetChildren([.. ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.RoadConnections.Select(road => CreateRoadLine(game,road))?? [],.. game.AreaMap.Select(info => CreateAreaPanel(page,game,info,armyTargetMap))]);
 				static Line CreateRoadLine(Game game,ScenarioData.Road road) {
 					Point from = game.AreaMap.GetValueOrDefault(road.From)?.Position??new(0,0);
 					Point to = game.AreaMap.GetValueOrDefault(road.To)?.Position??new(0,0);
@@ -233,7 +233,7 @@ namespace 悲愴三国志Zero2_1 {
 					Canvas.SetTop(areaPanel,info.Value.Position.Y*(mapSize.Height-areaSize.Height-infoFrameWidth.Value)/(mapGridCount.Y-1)+infoFrameWidth.Value);
 					areaPanel.PointerPressed+=(_,_) => MainPage.game=PushAreaPanel(page,MainPage.game,info);
 					return areaPanel.MySetChildren([areaBorder,areaBackPanel,areaInnerPanel.MySetChildren(GetAreaElems(page,game,info,armyTarget))]);
-					static List<UIElement> GetAreaElems(MainPage page,Game game,KeyValuePair<EArea,AreaInfo> areaInfo,Dictionary<ECountry,EArea?> armyTarget) => [
+					static List<UIElement> GetAreaElems(MainPage page,Game game,KeyValuePair<EArea,AreaInfo> areaInfo,Dictionary<ECountry,EArea?> armyTargetMap) => [
 						new StackPanel { HorizontalAlignment=HorizontalAlignment.Center,Orientation=Orientation.Horizontal}.MySetChildren([
 							new TextBlock { Text=areaInfo.Key.ToString() },
 							new TextBlock { Text=$" {areaInfo.Value.Country?.ToString()??$"自治"}領" },
@@ -246,7 +246,7 @@ namespace 悲愴三国志Zero2_1 {
 							new TextBlock { Text="/" },
 							new TextBlock { Text=areaInfo.Value.AffairParam.AffairsMax.ToString("0") },
 						]),
-						new TextBlock { Text=areaInfo.Value.Country?.MyApplyF( country=>game.CountryMap.GetValueOrDefault(country)?.SleepTurnNum.MyApplyF(v=>v>0?$"休み {v}":null)+(armyTarget.TryGetValue(country,out EArea? target)&&target==null?"(防)":"")),TextAlignment=TextAlignment.Center }
+						new TextBlock { Text=areaInfo.Value.Country?.MyApplyF(country=>game.CountryMap.GetValueOrDefault(country)?.SleepTurnNum.MyApplyF(v=>v>0?$"休み {v}":null)+(Country.IsFocusDefense(armyTargetMap,country)?"(防)":null)),TextAlignment=TextAlignment.Center }
 					];
 					static Game PushAreaPanel(MainPage page,Game game,KeyValuePair<EArea,AreaInfo> areaInfo) {
 						return game.Phase==Phase.Starting ? areaInfo.Value.Country?.MyApplyF(country => SelectPlayCountry(page,game,country))??game : Area.IsPlayerSelectable(game,areaInfo.Key) ? SelectTarget(page,game,areaInfo.Value.Country!=game.PlayCountry ? areaInfo.Key : null) : game;
@@ -319,7 +319,11 @@ namespace 悲愴三国志Zero2_1 {
 					static Game ArmyAttack(Game game,Dictionary<ECountry,EArea?> targetAreaMap) {
 						return game.CountryMap.Aggregate(game,(game,countryInfo) => {
 							EArea? targetArea = countryInfo.Value.Funds>=Country.CalcAttackFunds(game,countryInfo.Key) ? targetAreaMap.GetValueOrDefault(countryInfo.Key) : null;
-							return targetArea!=null ? game.MyApplyF(game => UpdateGame.Attack(game,countryInfo.Key,targetArea.Value)) : game.MyApplyF(game => UpdateGame.Defense(game,countryInfo.Key));
+							ECountry? defenseCountry = targetArea?.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country;
+							return targetArea!=null ? ExeAttack(game,targetAreaMap,countryInfo.Key,targetArea.Value,defenseCountry) : targetAreaMap.ContainsKey(countryInfo.Key) ? ExeDefense(game,countryInfo.Key) : ExeRest(game,countryInfo.Key,countryInfo.Value.SleepTurnNum);
+							static Game ExeAttack(Game game,Dictionary<ECountry,EArea?> targetAreaMap,ECountry country,EArea targetArea,ECountry? defenseCountry) => game.MyApplyF(game => UpdateGame.Attack(game,country,targetArea,defenseCountry,Country.IsFocusDefense(targetAreaMap,defenseCountry)));
+							static Game ExeDefense(Game game,ECountry country) => game.MyApplyF(game => UpdateGame.Defense(game,country));
+							static Game ExeRest(Game game,ECountry country,int remainRestTurn) => game.MyApplyF(game => UpdateGame.Rest(game,country,remainRestTurn));
 						});
 					}
 				}

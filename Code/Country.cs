@@ -27,5 +27,6 @@ namespace 悲愴三国志Zero2_1.Code {
 			decimal findPersonRank = mainRank+subRank/2;
 			return !MyRandom.RandomJudge((double)(findPersonRank+1)/30) ? null : MyRandom.RandomJudge((double)findPersonRank/100) ? 2 : 1;
 		}
+		internal static bool IsFocusDefense(Dictionary<ECountry,EArea?> armyTargetMap,ECountry? country) => country!=null&&armyTargetMap.TryGetValue(country.Value,out EArea? target)&&target==null;
 	}
 }

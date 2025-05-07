@@ -68,17 +68,17 @@ namespace 悲愴三国志Zero2_1.Code {
 			};
 			static Game RemoveDeathPersonPost(Game game) => Turn.GetInYear(game)==BaseData.yearItems.Length/2 ? UpdateGame.RemoveDeathPersonPost(game) : game;
 		}
-		internal static Game Attack(Game game,ECountry attackCountry,EArea targetArea) {
-			ECountry? defenseCountry = game.AreaMap.GetValueOrDefault(targetArea)?.Country;
+		internal static Game Attack(Game game,ECountry attackCountry,EArea targetArea,ECountry? defenseCountry,bool defenseSideFocusDefense) {
 			Army attackArmy = Commander.GetAttackCommander(game,attackCountry).MyApplyF(commander => new Army(attackCountry,commander,Commander.CommanderRank(game,commander,ERole.attack)));
-			AttackResult? countryBattle = Battle.Country.Attack(game,defenseCountry,targetArea,attackArmy,Lang.ja);
-			AttackResult areaBattle = Battle.Area.Attack(game,defenseCountry,targetArea,attackArmy,Lang.ja);
+			AttackResult? countryBattle = Battle.Country.Attack(game,defenseCountry,targetArea,attackArmy,defenseSideFocusDefense,Lang.ja);
+			AttackResult areaBattle = Battle.Area.Attack(game,defenseCountry,targetArea,attackArmy,defenseSideFocusDefense,Lang.ja);
 			return game.MyApplyF(game => PayAttackFunds(game,attackCountry))
 				.MyApplyF(game => BattleDefensesideCentralDefense(game,countryBattle,attackCountry,targetArea,attackArmy))
 				.MyApplyF(game => countryBattle?.Judge is AttackJudge.lose or AttackJudge.rout ? game : BattleDefensesideAreaDefense(game,areaBattle,attackCountry,targetArea,attackArmy));
 			static Game BattleDefensesideCentralDefense(Game game,AttackResult? countryBattle,ECountry attackCountry,EArea targetArea,Army attackArmy) => countryBattle?.Judge.MyApplyF(judge => AppendLogMessage(game,[countryBattle.InvadeText]).MyApplyF(game => CountryAttack(game,attackCountry,targetArea,attackArmy,countryBattle.Defense,judge)))??game;
 			static Game BattleDefensesideAreaDefense(Game game,AttackResult areaBattle,ECountry attackCountry,EArea targetArea,Army attackArmy) => AppendLogMessage(game,[areaBattle.InvadeText]).MyApplyF(game => areaBattle.Judge.MyApplyF(judge => AreaAttack(game,attackCountry,targetArea,attackArmy,areaBattle.Defense,judge)));
 		}
-		internal static Game Defense(Game game,ECountry country) => AppendLogMessage(game,[$"{country}は防衛に専念"]);
+		internal static Game Defense(Game game,ECountry country) => AppendLogMessage(game,[Text.DefenseText(country,Lang.ja)]);
+		internal static Game Rest(Game game,ECountry country,int remainRestTurn) => AppendLogMessage(game,[Text.RestText(country,remainRestTurn,Lang.ja)]);
 	}
 }
