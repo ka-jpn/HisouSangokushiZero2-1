@@ -76,7 +76,7 @@
 								<TextBlock Text="陣営ごとの勝利条件"/>
 							</Button>
 							<Button Grid.Column="3" x:Name="PersonDataButton" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#AFFF" BorderBrush="Black" BorderThickness="2" Padding="0">
-								<TextBlock Text="陣営・人物データ"/>
+								<TextBlock Text="人物・陣営データ"/>
 							</Button>
 							<Button Grid.Column="4" x:Name="ChangeLogButton" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#AFFF" BorderBrush="Black" BorderThickness="2" Padding="0">
 								<TextBlock Text="更新履歴"/>
@@ -206,13 +206,14 @@
 									<TextBlock Text="領土数の0.5乗が内政難度となります、領土が広がるとデバフとなることを表現しています" HorizontalAlignment="Center"/>
 									<StackPanel Height="10"/>
 									<TextBlock FontWeight="Bold" Text="収支計算について" HorizontalAlignment="Center"/>
-									<TextBlock Text="軍資金税収+資本注入 が収入、内政費+俸禄費 が支出となります" HorizontalAlignment="Center"/>
-									<TextBlock Text="軍資金税収は総内政値×内政力/内政難度、資本注入は10固定、内政費は地域内政担当の人物ランク合計×5、" HorizontalAlignment="Center"/>
+									<TextBlock Text="軍資金税収+資本注入 が収入、民政費+内政費+俸禄費 が支出となります" HorizontalAlignment="Center"/>
+									<TextBlock Text="軍資金税収は総内政値×内政力/内政難度、資本注入は10/領土数、" HorizontalAlignment="Center"/>
+									<TextBlock Text="民政費は(1-0.9^内政難度)×総内政値/内政難度、内政費は地域内政担当の人物ランク合計×5、" HorizontalAlignment="Center"/>
 									<TextBlock Text="俸禄費は陣営所属の人物ランク合計/5に加えて筆頭が2、次席が1、地域内政担当と地域防衛担当が1です" HorizontalAlignment="Center"/>
 									<TextBlock Text="ターン更新時に 収入-支出 が資金に合計されます" HorizontalAlignment="Center"/>
 									<StackPanel Height="10"/>
 									<TextBlock FontWeight="Bold" Text="侵攻出撃費用について" HorizontalAlignment="Center"/>
-									<TextBlock Text="(筆頭ランク+次席ランク/2+1)×200が出撃費用となり、資金が足りている時のみ侵攻できます" HorizontalAlignment="Center"/>
+									<TextBlock Text="(筆頭ランク+次席ランク/2+1)×100が出撃費用となり、資金が足りている時のみ侵攻できます" HorizontalAlignment="Center"/>
 									<TextBlock Text="資金が足りていない場合は実行されず、防衛専念と同じ扱いになります(ペナルティなし)" HorizontalAlignment="Center"/>
 									<StackPanel Height="10"/>
 									<TextBlock FontWeight="Bold" Text="内政値・内政上限値について" HorizontalAlignment="Center"/>
@@ -234,7 +235,14 @@
 								<StackPanel x:Name="WinCondPanel" Visibility="Collapsed">
 								</StackPanel>
 								<StackPanel x:Name="PersonDataPanel" Visibility="Collapsed">
+									<StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+										<TextBlock FontWeight="Bold" Text="シナリオ１："/>
+										<TextBlock FontWeight="Bold" Text="{x:Bind code:GameInfo.scenarios[0].Value}"/>
+									</StackPanel>
+									<TextBlock Text="人物データ" HorizontalAlignment="Center"/>
 									<VariableSizedWrapGrid x:Name="PersonDataListPanel" Orientation="Horizontal" HorizontalAlignment="Center"/>
+									<TextBlock Text="陣営データ" HorizontalAlignment="Center"/>
+									<VariableSizedWrapGrid x:Name="CountryDataListPanel" Orientation="Horizontal" HorizontalAlignment="Center"/>
 								</StackPanel>
 								<StackPanel x:Name="ChangeLogPanel" Visibility="Collapsed">
 

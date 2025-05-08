@@ -13,6 +13,7 @@ using static 悲愴三国志Zero2_1.Code.DefType;
 using Point = 悲愴三国志Zero2_1.Code.DefType.Point;
 using PostType = 悲愴三国志Zero2_1.Code.DefType.Post;
 using PersonType = 悲愴三国志Zero2_1.Code.DefType.Person;
+using System.Linq;
 namespace 悲愴三国志Zero2_1 {
 	public sealed partial class MainPage:Page {
 		internal enum ViewMode { fit,fix };
@@ -33,8 +34,8 @@ namespace 悲愴三国志Zero2_1 {
 		private static readonly Color waterRoadColor = Color.FromArgb(150,50,50,150);
 		internal static readonly double attackJudgePointSize = 10;
 		private static readonly double postFrameWidth=1.25;
-		internal static readonly double personInfoFrameWidth = 0.5;
-		internal static readonly Color personInfoFrameColor = Color.FromArgb(255,150,150,150);
+		internal static readonly double dataListFrameWidth = 0.5;
+		internal static readonly Color dataListFrameColor = Color.FromArgb(255,150,150,150);
 		private static Game game = null!;
 		private static (Panel panel, PostType post)? pointerover = null;
 		private static (Panel panel, PersonType person)? pick = null;	
@@ -64,16 +65,17 @@ namespace 悲愴三国志Zero2_1 {
 				page.AttackJudgePointVisualPanel.MySetChildren([.. CreateRects(null),.. CreateRects(AttackJudge.crush),.. CreateRects(AttackJudge.win),.. CreateRects(AttackJudge.lose),.. CreateRects(AttackJudge.rout),.. CreateTexts(AttackJudge.win),.. CreateTexts(AttackJudge.lose),.. CreateTexts(AttackJudge.rout)]);
 				page.AttackRankDiffTextPanel.MySetChildren([.. CreateRankDiffTexts()]);				
 				page.PersonDataListPanel.MySetChildren([.. CreatePersonDataList(0,12)]);
+				page.CountryDataListPanel.MySetChildren([.. CreateCountryDataList(0,2)]);
 				static Color ThresholdEdgeColor(AttackJudge? attackJudge) => attackJudge==AttackJudge.crush ? Color.FromArgb(255,240,135,135) : attackJudge==AttackJudge.win ? Color.FromArgb(255,230,230,65) : attackJudge==AttackJudge.lose ? Color.FromArgb(255,105,225,105) : attackJudge==AttackJudge.rout ? Color.FromArgb(255,135,135,240) : Color.FromArgb(255,165,165,165);
 				static Color ThresholdFillColor(AttackJudge attackJudge) => attackJudge==AttackJudge.crush ? Color.FromArgb(255,240,190,190) : attackJudge==AttackJudge.win ? Color.FromArgb(255,235,235,160) : attackJudge==AttackJudge.lose ? Color.FromArgb(255,175,240,175) : Color.FromArgb(255,190,190,240);
-				static Windows.Foundation.Point GetJudgePoint(AttackJudge? attackJudge,decimal rankDiff) => new((double)(rankDiff*9+50),Battle.GetThreshold(attackJudge,rankDiff));
-				static Windows.Foundation.Point[] GetJudgeShapeCrds(AttackJudge? attackJudge) => [.. new decimal[] { -5.5m,-5,-3,3,5,5.5m }.Select(i => CookPoint(GetJudgePoint(attackJudge,i)))];
-				static Windows.Foundation.Point[] GetJudgePoints(AttackJudge? attackJudge) => [.. new decimal[] { -5,-4,-3,-2,-1,0,1,2,3,4,5 }.Select(i => GetJudgePoint(attackJudge,i))];
-				static Windows.Foundation.Point CookPoint(Windows.Foundation.Point point) => point with { X=point.X*11.5,Y=point.Y*3 };
+				static Windows.Foundation.Point GetJudgePoint(AttackJudge? attackJudge,double rankDiff) => new((rankDiff*9+50),Battle.GetThreshold(attackJudge,rankDiff));
+				static Windows.Foundation.Point[] GetJudgeShapeCrds(AttackJudge? attackJudge) => [.. new double[] { -5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1,1,2,2.5,3,3.5,4,4.5,5,5.5 }.Select(i => CookPoint(GetJudgePoint(attackJudge,i)))];
+				static Windows.Foundation.Point[] GetJudgePoints(AttackJudge? attackJudge) => [.. new double[] { -5,-4,-3,-2,-1,0,1,2,3,4,5 }.Select(i => GetJudgePoint(attackJudge,i))];
+				static Windows.Foundation.Point CookPoint(Windows.Foundation.Point point) => point with { X=point.X*11.5,Y=point.Y*6 };
 				static UIElement SetJudgePointCrds(UIElement elem,Windows.Foundation.Point crd,Size size) => elem.MyApplyA(elem => { Canvas.SetLeft(elem,crd.X-size.Width/2); Canvas.SetTop(elem,crd.Y-size.Height/2); });
 				static TextBlock[] CreateTexts(AttackJudge? attackJudge) => [.. GetJudgePoints(attackJudge).Select(crd => new TextBlock { Text=crd.Y.ToString() }.MyApplyA(elem => SetJudgePointCrds(elem,CookPoint(crd),new(CalcFullWidthLength(crd.Y.ToString())*BasicStyle.fontsize,BasicStyle.textHiehgt))))];
 				static Rectangle[] CreateRects(AttackJudge? attackJudge) => [.. GetJudgePoints(attackJudge).Select(crd => new Rectangle { Width=attackJudgePointSize,Height=attackJudgePointSize,Fill=new SolidColorBrush(ThresholdEdgeColor(attackJudge)) }.MyApplyA(elem => SetJudgePointCrds(elem,CookPoint(crd),new(attackJudgePointSize,attackJudgePointSize))))];
-				static TextBlock[] CreateRankDiffTexts() => [.. new decimal[] { -5,-4,-3,-2,-1,0,1,2,3,4,5 }.Select(i => GetJudgePoint(null,i).MyApplyF(crd => new TextBlock { Text=i.ToString() }.MyApplyA(elem => SetJudgePointCrds(elem,CookPoint(crd with { Y=0 }),new(CalcFullWidthLength(i.ToString())*BasicStyle.fontsize,BasicStyle.textHiehgt)))))];
+				static TextBlock[] CreateRankDiffTexts() => [.. new double[] { -5,-4,-3,-2,-1,0,1,2,3,4,5 }.Select(i => GetJudgePoint(null,i).MyApplyF(crd => new TextBlock { Text=i.ToString() }.MyApplyA(elem => SetJudgePointCrds(elem,CookPoint(crd with { Y=0 }),new(CalcFullWidthLength(i.ToString())*BasicStyle.fontsize,BasicStyle.textHiehgt)))))];
 			}
 			static void AttachEvent(MainPage page) {
 				page.OpenLogButton.Click+=(_,_) => ClickOpenLogButton(page);
@@ -81,7 +83,7 @@ namespace 悲愴三国志Zero2_1 {
 				page.Page.SizeChanged+=(_,_) => ScalingElements(page,GetScaleFactor(page));
 				page.Page.Loaded+=(_,_) => LoadedPage(page);
 				page.PointerMoved+=(_,e) => MovePersonPanel(page,e);
-				page.PointerReleased+=(_,e) => PutPersonPanel(page,e);
+				page.PointerReleased+=(_,e) => PutPersonPanel(page);
 				page.InstructionButton.Click+=(_,_) => ClickSwitchInfoButton(page,InfoPanelState.Instruction);
 				page.ExplainButton.Click+=(_,_) => ClickSwitchInfoButton(page,InfoPanelState.Explain);
 				page.WinCondButton.Click+=(_,_) => ClickSwitchInfoButton(page,InfoPanelState.WinCond);
@@ -128,13 +130,19 @@ namespace 悲愴三国志Zero2_1 {
 						page.MovePersonCanvas.Children.SingleOrDefault()?.MyApplyA(personPanel => MovePerson(page,personPanel,e));
 					}
 				}
-				static void PutPersonPanel(MainPage page,PointerRoutedEventArgs e) {
+				static void PutPersonPanel(MainPage page) {
 					if(pick!=null) {
-						game=UpdateGame.PutPersonFromUI(game,pick?.person,pointerover?.post??pick?.person.MyApplyF(game.PersonMap.GetValueOrDefault)?.Post);
+						game=game.MyApplyF(game=> swapPerson(page,game)).MyApplyF(game => putPerson(page,game));
 						page.MovePersonCanvas.MySetChildren([]);
-						(pointerover?.panel??pick?.panel)?.MySetChildren([game.PersonMap.MyNullable().FirstOrDefault(v => v?.Key==pick?.person)?.MyApplyF(param => CreatePersonPanel(page,param))]);
 						pick=null;
 						ShowCountryInfo(page,game);
+					}
+					static Game swapPerson(MainPage page,Game game) {
+						KeyValuePair<PersonType,PersonParam>? maybeDestPersonInfo = game.PersonMap.MyNullable().FirstOrDefault(v => v?.Value.Country==game.PlayCountry&&v?.Value.Post==pointerover?.post);
+						return UpdateGame.PutPersonFromUI(game,maybeDestPersonInfo?.Key,pick?.person.MyApplyF(game.PersonMap.GetValueOrDefault)?.Post).MyApplyA(game => game.PersonMap.MyNullable().FirstOrDefault(v => v?.Key==maybeDestPersonInfo?.Key)?.MyApplyF(destPersonInfo => pick?.panel.MySetChildren([CreatePersonPanel(page,destPersonInfo)])));
+					}
+					static Game putPerson(MainPage page,Game game) {
+						return UpdateGame.PutPersonFromUI(game,pick?.person,pointerover?.post??pick?.person.MyApplyF(game.PersonMap.GetValueOrDefault)?.Post).MyApplyA(game => game.PersonMap.MyNullable().FirstOrDefault(v => v?.Key==pick?.person)?.MyApplyF(putPersonInfo => (pointerover?.panel??pick?.panel)?.MySetChildren([CreatePersonPanel(page,putPersonInfo)])));
 					}
 				}
 				static void ClickSwitchInfoButton(MainPage page,InfoPanelState clickButtonInfoPanelState) {
@@ -198,7 +206,7 @@ namespace 悲愴三国志Zero2_1 {
 				Grid personPutPanel = new() { Width=personPutSize.Width,Height=personPutSize.Height,BorderBrush=new SolidColorBrush(GetPostFrameColor(game,post.PostKind.MaybeArea)),BorderThickness=new(postFrameWidth),Background=new SolidColorBrush(Colors.Transparent) };
 				StackPanel personPutInnerPanel = new StackPanel().MySetChildren(putPersonMap.MyNullable().FirstOrDefault(v => v?.Value.Post==post) is KeyValuePair<PersonType,PersonParam> param ? [CreatePersonPanel(page,param)] : []);
 				TextBlock personPutBackText = new() { Text=backText,Foreground=new SolidColorBrush(Color.FromArgb(100,100,100,100)),HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center,RenderTransform=new ScaleTransform() { ScaleX=2,ScaleY=2,CenterX=CalcFullWidthLength(backText)*BasicStyle.fontsize/2,CenterY=BasicStyle.textHiehgt/2 } };
-				personPutPanel.PointerEntered+=(_,_) => EnterPersonPanel(game,personPutInnerPanel,post);
+				personPutPanel.PointerEntered+=(_,_) => EnterPersonPanel(MainPage.game,personPutInnerPanel,post);
 				personPutPanel.PointerExited+=(_,_) => ExitPersonPanel(personPutInnerPanel);
 				return personPutPanel.MySetChildren([personPutBackText,personPutInnerPanel]);
 				static void EnterPersonPanel(Game game,StackPanel personPutInnerPanel,PostType post) {
@@ -301,10 +309,10 @@ namespace 悲愴三国志Zero2_1 {
 					new TextBlock{ Text=Turn.GetCalendarText(game),TextAlignment=TextAlignment.Center },
 						new TextBlock{ Text=$"プレイ勢力:{game.PlayCountry}",TextAlignment=TextAlignment.Center },
 						new TextBlock{ Text=$"首都:{game.PlayCountry?.MyApplyF(country=>Area.GetCapitalArea(game,country))}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
-						new TextBlock{ Text=$"資金:{game.PlayCountry?.MyApplyF(game.CountryMap.GetValueOrDefault)?.Funds.ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
-						new TextBlock{ Text=$"内政力:{game.PlayCountry?.MyApplyF(country=>Country.GetAffairsPower(game,country)).ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
-						new TextBlock{ Text=$"内政難度:{game.PlayCountry?.MyApplyF(country=>Country.GetAffairsDifficult(game,country)).ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
-						new TextBlock{ Text=$"総内政値:{game.PlayCountry?.MyApplyF(country=>Country.GetTotalAffairs(game,country)).ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
+						new TextBlock{ Text=$"資金:{game.PlayCountry?.MyApplyF(game.CountryMap.GetValueOrDefault)?.Fund.ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
+						new TextBlock{ Text=$"内政力:{game.PlayCountry?.MyApplyF(country=>Country.GetAffairPower(game,country)).ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
+						new TextBlock{ Text=$"内政難度:{game.PlayCountry?.MyApplyF(country=>Country.GetAffairDifficult(game,country)).ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
+						new TextBlock{ Text=$"総内政値:{game.PlayCountry?.MyApplyF(country=>Country.GetTotalAffair(game,country)).ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
 						new TextBlock{ Text=$"支出:{game.PlayCountry?.MyApplyF(country=>Country.GetOutFunds(game,country)).ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
 						new TextBlock{ Text=$"収入:{game.PlayCountry?.MyApplyF(country=>Country.GetInFunds(game,country)).ToString("0.####")}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
 						new TextBlock{ Text=$"侵攻:{Country.GetTargetArea(game)?.ToString()??"なし"}",FontSize=countryInfoFontSize,TextAlignment=TextAlignment.Center },
@@ -314,11 +322,11 @@ namespace 悲愴三国志Zero2_1 {
 					return game.MyApplyF(CalcArmyTarget).MyApplyA(v => UpdateAreaUI(page,game,v)).MyApplyF(v => ArmyAttack(game,v)).MyApplyF(v => v with { Phase=Phase.Execution });
 					static Dictionary<ECountry,EArea?> CalcArmyTarget(Game game) {
 						return game.CountryMap.Where(country=>country.Value.SleepTurnNum==0).ToDictionary(country => country.Key,country => country.Key==ECountry.漢 ? null : country.Key!=game.PlayCountry ? RandomSelectNPCAttackTarget(game,country.Key) : game.SelectTarget);
-						static EArea? RandomSelectNPCAttackTarget(Game game,ECountry country) => Area.GetAdjacentAnotherCountryAllAreas(game,country).MyApplyF(areas => areas.MyNullable().Append(null).MyPickAny());
+						static EArea? RandomSelectNPCAttackTarget(Game game,ECountry country) => Area.GetAdjacentAnotherCountryAllAreas(game,country).MyNullable().Append(null).MyPickAny().MyApplyF(area=> area?.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country!=null&&MyRandom.RandomJudge(0.9)?null:area);
 					}
 					static Game ArmyAttack(Game game,Dictionary<ECountry,EArea?> targetAreaMap) {
 						return game.CountryMap.Aggregate(game,(game,countryInfo) => {
-							EArea? targetArea = countryInfo.Value.Funds>=Country.CalcAttackFunds(game,countryInfo.Key) ? targetAreaMap.GetValueOrDefault(countryInfo.Key) : null;
+							EArea? targetArea = countryInfo.Value.Fund>=Country.CalcAttackFunds(game,countryInfo.Key) ? targetAreaMap.GetValueOrDefault(countryInfo.Key) : null;
 							ECountry? defenseCountry = targetArea?.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country;
 							return targetArea!=null ? ExeAttack(game,targetAreaMap,countryInfo.Key,targetArea.Value,defenseCountry) : targetAreaMap.ContainsKey(countryInfo.Key) ? ExeDefense(game,countryInfo.Key) : ExeRest(game,countryInfo.Key,countryInfo.Value.SleepTurnNum);
 							static Game ExeAttack(Game game,Dictionary<ECountry,EArea?> targetAreaMap,ECountry country,EArea targetArea,ECountry? defenseCountry) => game.MyApplyF(game => UpdateGame.Attack(game,country,targetArea,defenseCountry,Country.IsFocusDefense(targetAreaMap,defenseCountry)));
@@ -333,20 +341,20 @@ namespace 悲愴三国志Zero2_1 {
 			}
 		}
 		static StackPanel[] CreatePersonDataList(int scenarioNo,int chunkBlockNum) {
-			ScenarioData.ScenarioInfo? maybeScenarioInfo = GameInfo.scenarios.ElementAtOrDefault(scenarioNo)?.MyApplyF(scenario => ScenarioData.scenarios.GetValueOrDefault(scenario));
-			Dictionary<PersonType,PersonParam>[] chunkedPersonInfos = maybeScenarioInfo?.PersonMap.MyApplyF(elems => elems.OrderBy(v => v.Value.Country).ThenBy(v => v.Value.Role).Chunk((int)Math.Ceiling((double)elems.Count/chunkBlockNum))).Select(v => v.ToDictionary()).ToArray()?? [];
-			return maybeScenarioInfo?.MyApplyF(scenarioInfo => chunkedPersonInfos.Select(chunkedPersonInfo => CreatePersonDataPanel(scenarioInfo,chunkedPersonInfo)).ToArray())?? [];
-			static StackPanel CreatePersonDataPanel(ScenarioData.ScenarioInfo scenarioInfo,Dictionary<PersonType,PersonParam> includePersonInfo) {
-				return new StackPanel { BorderThickness=new(personInfoFrameWidth),BorderBrush=new SolidColorBrush(personInfoFrameColor),Background=new SolidColorBrush(personInfoFrameColor) }.MySetChildren([
+			ScenarioData.ScenarioInfo? maybeScenarioInfo = ScenarioData.scenarios.MyNullable().ElementAtOrDefault(scenarioNo)?.Value;
+			Dictionary<PersonType,PersonParam>[] chunkedPersonInfoMaps = maybeScenarioInfo?.PersonMap.MyApplyF(elems => elems.OrderBy(v => v.Value.Country).ThenBy(v => v.Value.Role).Chunk((int)Math.Ceiling((double)elems.Count/chunkBlockNum))).Select(v => v.ToDictionary()).ToArray()?? [];
+			return maybeScenarioInfo?.MyApplyF(scenarioInfo => chunkedPersonInfoMaps.Select(chunkedPersonInfoMap => CreatePersonDataPanel(scenarioInfo,chunkedPersonInfoMap)).ToArray())?? [];
+			static StackPanel CreatePersonDataPanel(ScenarioData.ScenarioInfo scenarioInfo,Dictionary<PersonType,PersonParam> includePersonInfoMap) {
+				return new StackPanel { BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor),Background=new SolidColorBrush(dataListFrameColor) }.MySetChildren([
 					CreatePersonDataLine(
 						Color.FromArgb(255,240,240,240),
-						new TextBlock { Text="勢力名",HorizontalAlignment=HorizontalAlignment.Center },
+						new TextBlock { Text="陣営",HorizontalAlignment=HorizontalAlignment.Center },
 						new TextBlock { Text="人物名",HorizontalAlignment=HorizontalAlignment.Center },
 						new TextBlock { Text="ロール",Margin=new(0,0,-BasicStyle.fontsize*1.5,0),RenderTransform=new ScaleTransform() { ScaleX=0.5 } },
 						new TextBlock { Text="ランク",Margin=new(0,0,-BasicStyle.fontsize*1.5,0),RenderTransform=new ScaleTransform() { ScaleX=0.5 } },
 						new TextBlock { Text="登場",HorizontalAlignment=HorizontalAlignment.Center },
 						new TextBlock { Text="没年",HorizontalAlignment=HorizontalAlignment.Center }
-					), .. includePersonInfo.Select(personInfo => CreatePersonDataLine(
+					), .. includePersonInfoMap.Select(personInfo => CreatePersonDataLine(
 						scenarioInfo.CountryMap.GetValueOrDefault(personInfo.Value.Country)?.ViewColor??Colors.Transparent,
 						new TextBlock { Text=personInfo.Value.Country.ToString(),HorizontalAlignment=HorizontalAlignment.Center },
 						new TextBlock { Text=personInfo.Key.Value,Margin=new(0,0,-BasicStyle.fontsize*(CalcFullWidthLength(personInfo.Key.Value)-3),0),RenderTransform=new ScaleTransform() { ScaleX=Math.Min(1,3/CalcFullWidthLength(personInfo.Key.Value)) } },
@@ -358,14 +366,42 @@ namespace 悲愴三国志Zero2_1 {
 				]);
 				static StackPanel CreatePersonDataLine(Color backColor,UIElement countryNameElem,UIElement personNameElem,UIElement personRoleElem,UIElement personRankElem,UIElement personAppearYearElem,UIElement personDeathYearElem) {
 					return new StackPanel { Orientation=Orientation.Horizontal,Background=new SolidColorBrush(backColor),}.MySetChildren([
-						new Border{ Width=CalcElemWidth(3),BorderThickness=new(personInfoFrameWidth),BorderBrush=new SolidColorBrush(personInfoFrameColor) }.MySetChild(countryNameElem),
-						new Border{ Width=CalcElemWidth(3),BorderThickness=new(personInfoFrameWidth),BorderBrush=new SolidColorBrush(personInfoFrameColor) }.MySetChild(personNameElem),
-						new Border{ Width=CalcElemWidth(1.5),BorderThickness=new(personInfoFrameWidth),BorderBrush=new SolidColorBrush(personInfoFrameColor) }.MySetChild(personRoleElem),
-						new Border{ Width=CalcElemWidth(1.5),BorderThickness=new(personInfoFrameWidth),BorderBrush=new SolidColorBrush(personInfoFrameColor) }.MySetChild(personRankElem),
-						new Border{ Width=CalcElemWidth(2),BorderThickness=new(personInfoFrameWidth),BorderBrush=new SolidColorBrush(personInfoFrameColor) }.MySetChild(personAppearYearElem),
-						new Border{ Width=CalcElemWidth(2),BorderThickness=new(personInfoFrameWidth),BorderBrush=new SolidColorBrush(personInfoFrameColor) }.MySetChild(personDeathYearElem),
+						new Border{ Width=CalcElemWidth(3),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(countryNameElem),
+						new Border{ Width=CalcElemWidth(3),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(personNameElem),
+						new Border{ Width=CalcElemWidth(1.5),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(personRoleElem),
+						new Border{ Width=CalcElemWidth(1.5),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(personRankElem),
+						new Border{ Width=CalcElemWidth(2),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(personAppearYearElem),
+						new Border{ Width=CalcElemWidth(2),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(personDeathYearElem),
 					]);
-					static double CalcElemWidth(double textlength) => BasicStyle.fontsize*textlength+personInfoFrameWidth*2;
+					static double CalcElemWidth(double textlength) => BasicStyle.fontsize*textlength+dataListFrameWidth*2;
+				}
+			}
+		}
+		static StackPanel[] CreateCountryDataList(int scenarioNo,int chunkBlockNum) {
+			ScenarioData.ScenarioInfo? maybeScenarioInfo = ScenarioData.scenarios.MyNullable().ElementAtOrDefault(scenarioNo)?.Value;
+			Dictionary<ECountry,CountryInfo>[] chunkedCountryInfoMaps = maybeScenarioInfo?.CountryMap.MyApplyF(elems => elems.OrderBy(v => v.Key).Chunk((int)Math.Ceiling((double)elems.Count/chunkBlockNum))).Select(v => v.ToDictionary()).ToArray()?? [];
+			return maybeScenarioInfo?.MyApplyF(scenarioInfo => chunkedCountryInfoMaps.Select(chunkedCountryInfoMap => CreateCountryDataPanel(scenarioInfo,chunkedCountryInfoMap)).ToArray())?? [];
+			static StackPanel CreateCountryDataPanel(ScenarioData.ScenarioInfo scenarioInfo,Dictionary<ECountry,CountryInfo> includeCountryInfoMap) {
+				return new StackPanel { BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor),Background=new SolidColorBrush(dataListFrameColor) }.MySetChildren([
+					CreateCountryDataLine(
+						Color.FromArgb(255,240,240,240),
+						new TextBlock { Text="陣営名",HorizontalAlignment=HorizontalAlignment.Center },
+						new TextBlock { Text="資金",HorizontalAlignment=HorizontalAlignment.Center },
+						new TextBlock { Text="所属エリア",HorizontalAlignment=HorizontalAlignment.Center }
+					), .. includeCountryInfoMap.Select(countryInfo => CreateCountryDataLine(
+						scenarioInfo.CountryMap.GetValueOrDefault(countryInfo.Key)?.ViewColor??Colors.Transparent,
+						new TextBlock { Text=countryInfo.Key.ToString(),HorizontalAlignment=HorizontalAlignment.Center },
+						new TextBlock { Text=countryInfo.Value.Fund.ToString(),HorizontalAlignment=HorizontalAlignment.Center },
+						new TextBlock { Text=string.Join(",",scenarioInfo.AreaMap.Where(v=>v.Value.Country==countryInfo.Key).Select(v=>v.Key.ToString())),HorizontalAlignment=HorizontalAlignment.Left }
+					))
+				]);
+				static StackPanel CreateCountryDataLine(Color backColor,UIElement countryNameElem,UIElement countryFundElem,UIElement countryAreasElem) {
+					return new StackPanel { Orientation=Orientation.Horizontal,Background=new SolidColorBrush(backColor),}.MySetChildren([
+						new Border{ Width=CalcElemWidth(3),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(countryNameElem),
+						new Border{ Width=CalcElemWidth(3),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(countryFundElem),
+						new Border{ Width=CalcElemWidth(50),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(countryAreasElem),
+					]);
+					static double CalcElemWidth(double textlength) => BasicStyle.fontsize*textlength+dataListFrameWidth*2;
 				}
 			}
 		}

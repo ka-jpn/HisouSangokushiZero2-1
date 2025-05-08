@@ -8,13 +8,13 @@ namespace 悲愴三国志Zero2_1.Code {
 		private static bool IsAppearPerson(Game game,PersonParam personParam) => GetAppearYear(personParam)==Turn.GetYear(game)&&Turn.GetInYear(game)==BaseData.yearItems.Length/2;
 		private static bool IsAlivePerson(PersonParam personParam) => personParam.Post!=null;
 		private static bool IsWaitPostPerson(PersonParam personParam) => personParam.Post is PostType post&&post.PostKind.MyApplyF(v => v.MaybeArea==null&&v.MaybeHead==null&&v.MaybePostNo==null);
-		private static bool IsDeathPerson(int year,PersonParam personParam) => year>=personParam.DeathYear&&personParam.Post!=null&&personParam.GameDeathTurn==null&&MyRandom.RandomJudge(0.1+(year-personParam.DeathYear)*0.09);
+		private static bool IsNaturalDeathPerson(int year,PersonParam personParam) => year>=personParam.DeathYear&&personParam.Post!=null&&personParam.GameDeathTurn==null&&MyRandom.RandomJudge(0.1+(year-personParam.DeathYear)*0.09);
 		private static Dictionary<PersonType,PersonParam> GetRolePersonMap(Game game,ECountry country,ERole role) => game.PersonMap.Where(v => v.Value.Country==country&&(v.Value.Post?.MyApplyF(v => v.PostRole==role)??v.Value.Role==role)).ToDictionary();
 		internal static Dictionary<PersonType,PersonParam> GetInitPersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsInitPerson(game,v.Value)).ToDictionary();
 		internal static Dictionary<PersonType,PersonParam> GetAppearPersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsAppearPerson(game,v.Value)).ToDictionary();
 		internal static Dictionary<PersonType,PersonParam> GetAlivePersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsAlivePerson(v.Value)).ToDictionary();
 		internal static Dictionary<PersonType,PersonParam> GetWaitPostPersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsWaitPostPerson(v.Value)).ToDictionary();
-		internal static Dictionary<PersonType,PersonParam> GetDeathPostPersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsDeathPerson(Turn.GetYear(game),v.Value)).ToDictionary();
+		internal static Dictionary<PersonType,PersonParam> GetDeathPostPersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsNaturalDeathPerson(Turn.GetYear(game),v.Value)).ToDictionary();
 		internal static KeyValuePair<PersonType,PersonParam>? GetPostPerson(Game game,ECountry country,PostType post) => game.PersonMap.MyNullable().FirstOrDefault(v => v?.Value.Country==country&&v?.Value.Post==post);
 		internal static decimal CalcRank(Game game,PersonType person,ERole role) => game.PersonMap.GetValueOrDefault(person)?.MyApplyF(param => CalcRank(param,role))??0m;
 		internal static decimal CalcRank(PersonParam personParam,ERole role) => personParam.Rank+(personParam.Role==role ? 0 : -1);

@@ -9,7 +9,7 @@ namespace 悲愴三国志Zero2_1.Code {
     public record PersonParam(ERole Role,int Rank,int BirthYear,int DeathYear,ECountry Country,int? GameAppearYear = null,int? GameDeathTurn=null,Post? Post=null);
     public record AffairsParam(decimal AffairsMax,decimal AffairNow);
     public record AreaInfo(Point Position,AffairsParam AffairParam,ECountry? Country);
-    public record CountryInfo(decimal Funds,int NavyLevel,Color ViewColor,Func<string> WinConditionMessageFunc,Func<bool> WinConditionJudgeFunc,Func<string> WinConditionProgressExplainFunc,int SleepTurnNum,int AnonymousPersonNum,EArea? CapitalArea = null,EArea? Invade = null,ECountry? PerishFrom = null);
+    public record CountryInfo(decimal Fund,int NavyLevel,Color ViewColor,Func<string> WinConditionMessageFunc,Func<bool> WinConditionJudgeFunc,Func<string> WinConditionProgressExplainFunc,int SleepTurnNum,int AnonymousPersonNum,EArea? CapitalArea = null,EArea? Invade = null,ECountry? PerishFrom = null);
 		internal record Commander(Person? MainPerson,Person? SubPerson);
 		public record Game(Scenario NowScenario,Dictionary<EArea,AreaInfo> AreaMap,Dictionary<ECountry,CountryInfo> CountryMap,Dictionary<Person,PersonParam> PersonMap,ECountry? PlayCountry,int? PlayTurn,int PlayerMaxCellNum, Phase Phase,EArea? SelectTarget,bool IsTurnProcessing,string[] LogMessage,string[] TrunMyLog,string[] TrunOtherLog,string[] GameLog,Action? StateHasChanged=null);
 		public record PostKind(PostHead? MaybeHead,int? MaybePostNo,EArea? MaybeArea) {

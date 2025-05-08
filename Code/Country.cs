@@ -1,22 +1,22 @@
 ﻿using MyUtil;
 using Windows.UI;
-using static 悲愴三国志Zero2_1.Code.Battle;
 using static 悲愴三国志Zero2_1.Code.DefType;
 namespace 悲愴三国志Zero2_1.Code {
 	internal static class Country {
 		internal static Color? GetCountryColor(Game game,ECountry? country) => country?.MyApplyF(game.CountryMap.GetValueOrDefault)?.ViewColor;
-		internal static decimal GetTotalAffairs(Game game,ECountry country) => game.AreaMap.Where(v => v.Value.Country==country).Sum(v => v.Value.AffairParam.AffairNow*(v.Key==game.CountryMap.GetValueOrDefault(country)?.CapitalArea ? 1.5m : 1m));
-		internal static decimal GetAffairsPower(Game game,ECountry country) => Commander.GetAffairsCommander(game,country).MyApplyF(v => Commander.CommanderRank(game,v,ERole.affair)).MyApplyF(affairsRank => affairsRank/5m+1);
-		internal static decimal GetAffairsDifficult(Game game,ECountry country) => Math.Round((decimal)Math.Pow(GetAreaNum(game,country),0.5),4);
-		internal static decimal GetInFunds(Game game,ECountry country) => (GetAreaNum(game,country)!=0 ? Math.Round(GetTotalAffairs(game,country)*GetAffairsPower(game,country)/GetAffairsDifficult(game,country),4) : 0)+10;
+		internal static decimal GetTotalAffair(Game game,ECountry country) => game.AreaMap.Where(v => v.Value.Country==country).Sum(v => v.Value.AffairParam.AffairNow*(v.Key==game.CountryMap.GetValueOrDefault(country)?.CapitalArea ? 1.5m : 1m));
+		internal static decimal GetAffairPower(Game game,ECountry country) => Commander.GetAffairsCommander(game,country).MyApplyF(v => Commander.CommanderRank(game,v,ERole.affair)).MyApplyF(affairsRank => affairsRank/5m+1);
+		internal static decimal GetAffairDifficult(Game game,ECountry country) => Math.Round((decimal)Math.Pow(GetAreaNum(game,country),0.5),4);
+		internal static decimal GetInFunds(Game game,ECountry country) => GetAreaNum(game,country)!=0 ? Math.Round(GetTotalAffair(game,country)*GetAffairPower(game,country)/GetAffairDifficult(game,country)+10m/GetAreaNum(game,country),4) : 0;
 		internal static decimal GetOutFunds(Game game,ECountry country) {
 			List<PersonParam> deployedPersonParams = [..Enum.GetValues<ERole>().SelectMany(role => Person.GetAlivePersonMap(game,country,role).ExceptBy(Person.GetWaitPostPersonMap(game,country,role).Keys,v => v.Key).Select(v => v.Value))];
+			decimal backCost = Math.Round((decimal)(1-Math.Pow(0.9,(double)GetAffairDifficult(game,country)))*GetTotalAffair(game,country)/GetAffairDifficult(game,country),4);
 			int roleCost = deployedPersonParams.Sum(v => v.Post?.PostKind.MaybeHead==PostHead.main ? 2 : v.Post?.PostKind.MaybeHead==PostHead.sub ? 1 : v.Post?.PostKind.MaybeArea!=null ? 1 : 0);
 			int affairCost = deployedPersonParams.Sum(v => v.Post?.PostKind.MaybeArea!=null&&v.Post?.PostRole==ERole.affair ? v.Rank*5 : 0);
 			decimal personCost = deployedPersonParams.Sum(v => v.Rank/5m);
-			return roleCost+affairCost+personCost;
+			return backCost+roleCost+affairCost+personCost;
 		}
-		internal static decimal CalcAttackFunds(Game game,ECountry country) => Commander.GetAttackCommander(game,country).MyApplyF(v => Commander.CommanderRank(game,v,ERole.attack)).MyApplyF(attackRank => (attackRank+2)*100);
+		internal static decimal CalcAttackFunds(Game game,ECountry country) => Commander.GetAttackCommander(game,country).MyApplyF(v => Commander.CommanderRank(game,v,ERole.attack)).MyApplyF(attackRank => (attackRank+2)*50);
 		internal static EArea? GetTargetArea(Game game) => game.SelectTarget;
 		internal static EArea? GetInvadeArea(Game game,ECountry? country) => country?.MyApplyF(game.CountryMap.GetValueOrDefault)?.Invade;
 		internal static int GetAreaNum(Game game,ECountry country) => game.AreaMap.Values.Where(v => v.Country==country).Count();
