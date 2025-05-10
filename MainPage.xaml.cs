@@ -13,7 +13,6 @@ using static 悲愴三国志Zero2_1.Code.DefType;
 using Point = 悲愴三国志Zero2_1.Code.DefType.Point;
 using PostType = 悲愴三国志Zero2_1.Code.DefType.Post;
 using PersonType = 悲愴三国志Zero2_1.Code.DefType.Person;
-using System.Linq;
 namespace 悲愴三国志Zero2_1 {
 	public sealed partial class MainPage:Page {
 		internal enum ViewMode { fit,fix };
@@ -64,8 +63,10 @@ namespace 悲愴三国志Zero2_1 {
 				page.AttackRoutShape.MyApplyA(v => v.Fill=new SolidColorBrush(ThresholdFillColor(AttackJudge.rout))).MyApplyA(v => v.Points= [.. GetJudgeShapeCrds(AttackJudge.rout),.. GetJudgeShapeCrds(null).Reverse()]);
 				page.AttackJudgePointVisualPanel.MySetChildren([.. CreateRects(null),.. CreateRects(AttackJudge.crush),.. CreateRects(AttackJudge.win),.. CreateRects(AttackJudge.lose),.. CreateRects(AttackJudge.rout),.. CreateTexts(AttackJudge.win),.. CreateTexts(AttackJudge.lose),.. CreateTexts(AttackJudge.rout)]);
 				page.AttackRankDiffTextPanel.MySetChildren([.. CreateRankDiffTexts()]);				
-				page.PersonDataListPanel.MySetChildren([.. CreatePersonDataList(0,12)]);
-				page.CountryDataListPanel.MySetChildren([.. CreateCountryDataList(0,2)]);
+				page.PersonDataListPanel1.MySetChildren([.. CreatePersonDataList(0,12)]);
+				page.CountryDataListPanel1.MySetChildren([.. CreateCountryDataList(0,2)]);
+				page.PersonDataListPanel2.MySetChildren([.. CreatePersonDataList(1,12)]);
+				page.CountryDataListPanel2.MySetChildren([.. CreateCountryDataList(1,2)]);
 				static Color ThresholdEdgeColor(AttackJudge? attackJudge) => attackJudge==AttackJudge.crush ? Color.FromArgb(255,240,135,135) : attackJudge==AttackJudge.win ? Color.FromArgb(255,230,230,65) : attackJudge==AttackJudge.lose ? Color.FromArgb(255,105,225,105) : attackJudge==AttackJudge.rout ? Color.FromArgb(255,135,135,240) : Color.FromArgb(255,165,165,165);
 				static Color ThresholdFillColor(AttackJudge attackJudge) => attackJudge==AttackJudge.crush ? Color.FromArgb(255,240,190,190) : attackJudge==AttackJudge.win ? Color.FromArgb(255,235,235,160) : attackJudge==AttackJudge.lose ? Color.FromArgb(255,175,240,175) : Color.FromArgb(255,190,190,240);
 				static Windows.Foundation.Point GetJudgePoint(AttackJudge? attackJudge,double rankDiff) => new((rankDiff*9+50),Battle.GetThreshold(attackJudge,rankDiff));
@@ -158,10 +159,9 @@ namespace 悲愴三国志Zero2_1 {
 					game=GetGame.GetInitGameScenario(scenario);
 					UpdateAreaUI(page,game,[]);
 					UpdateCountryPostPersons(page,game);
-					page.CountryInfoContentsPanel.MySetChildren([
-						new TextBlock{ Text="プレイ勢力選択後に",FontSize=20,TextAlignment=TextAlignment.Center },
-						new TextBlock{ Text="情報が表示されます",FontSize=20,TextAlignment=TextAlignment.Center },
-					]);
+					ComboBox scenarioSelect = new ComboBox { FontSize=24,HorizontalAlignment=HorizontalAlignment.Center,SelectedIndex=GameInfo.scenarios.MyGetIndex(v=>v==game.NowScenario)??0,Foreground=new SolidColorBrush(Colors.Black),Background=new SolidColorBrush(Colors.White) }.MyApplyA(elem => GameInfo.scenarios.Select(v => v.Value).ToList().ForEach(elem.Items.Add));
+					scenarioSelect.SelectionChanged+=(_,_) => (scenarioSelect.SelectedItem as string)?.MyApplyA(scenarioName => InitGame(page,new(scenarioName)));
+					page.CountryInfoContentsPanel.MySetChildren([new TextBlock { Text="シナリオ",FontSize=20,TextAlignment=TextAlignment.Center },scenarioSelect]);
 				}
 				static void SwitchViewMode(MainPage page) {
 					viewMode=viewMode==ViewMode.fix ? ViewMode.fit : ViewMode.fix;
@@ -223,11 +223,10 @@ namespace 悲愴三国志Zero2_1 {
 				}
 			}
 			static void UpdateAreaUI(MainPage page,Game game,Dictionary<ECountry,EArea?> armyTargetMap) {
-				page.MapElementsCanvas.MySetChildren([.. ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.RoadConnections.Select(road => CreateRoadLine(game,road))?? [],.. game.AreaMap.Select(info => CreateAreaPanel(page,game,info,armyTargetMap))]);
-				static Line CreateRoadLine(Game game,ScenarioData.Road road) {
-					Point from = game.AreaMap.GetValueOrDefault(road.From)?.Position??new(0,0);
-					Point to = game.AreaMap.GetValueOrDefault(road.To)?.Position??new(0,0);
-					return new Line() { X1=CookPositionX(from.X),Y1=CookPositionY(from.Y),X2=CookPositionX(to.X),Y2=CookPositionY(to.Y),Stroke=new SolidColorBrush(road.Kind==RoadKind.land ? landRoadColor : waterRoadColor),StrokeThickness=10*Math.Pow(road.Easiness,1.6)+20 };
+				page.MapElementsCanvas.MySetChildren([.. ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.RoadConnections.Select(road => MaybeCreateRoadLine(game,road)).MyNonNull()?? [],.. game.AreaMap.Select(info => CreateAreaPanel(page,game,info,armyTargetMap))]);
+				static Line? MaybeCreateRoadLine(Game game,ScenarioData.Road road) {
+					return game.AreaMap.GetValueOrDefault(road.From)?.Position is Point from&&game.AreaMap.GetValueOrDefault(road.To)?.Position is Point to ? CreateRoadLine(road,from,to) : null;
+					static Line CreateRoadLine(ScenarioData.Road road,Point from,Point to) => new(){ X1=CookPositionX(from.X),Y1=CookPositionY(from.Y),X2=CookPositionX(to.X),Y2=CookPositionY(to.Y),Stroke=new SolidColorBrush(road.Kind==RoadKind.land ? landRoadColor : waterRoadColor),StrokeThickness=10*Math.Pow(road.Easiness,1.7)/2+20 };
 					static double CookPositionX(double x) => x*(mapSize.Width-areaSize.Width-infoFrameWidth.Value)/(mapGridCount.X-1)+infoFrameWidth.Value+areaSize.Width/2;
 					static double CookPositionY(double y) => y*(mapSize.Height-areaSize.Height-infoFrameWidth.Value)/(mapGridCount.Y-1)+infoFrameWidth.Value+areaSize.Height/2;
 				}
@@ -399,12 +398,12 @@ namespace 悲愴三国志Zero2_1 {
 					return new StackPanel { Orientation=Orientation.Horizontal,Background=new SolidColorBrush(backColor),}.MySetChildren([
 						new Border{ Width=CalcElemWidth(3),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(countryNameElem),
 						new Border{ Width=CalcElemWidth(3),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(countryFundElem),
-						new Border{ Width=CalcElemWidth(50),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(countryAreasElem),
+						new Border{ Width=CalcElemWidth(45),BorderThickness=new(dataListFrameWidth),BorderBrush=new SolidColorBrush(dataListFrameColor) }.MySetChild(countryAreasElem),
 					]);
 					static double CalcElemWidth(double textlength) => BasicStyle.fontsize*textlength+dataListFrameWidth*2;
 				}
 			}
 		}
-		static double CalcFullWidthLength(string str) => str.Length-str.Where(v => v is '0' or '1' or '2' or '3' or '4' or '5' or '6' or '7' or '8' or '9' or '-').Count()*0.4;
+		static double CalcFullWidthLength(string str) => str.Length-str.Where(v => v is '0' or '1' or '2' or '3' or '4' or '5' or '6' or '7' or '8' or '9' or '-' or '.').Count()*0.4;
 	}
 }

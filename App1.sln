@@ -5,7 +5,7 @@ VisualStudioVersion = 17.13.35919.96
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "悲愴三国志Zero2_1", "悲愴三国志Zero2_1.csproj", "{38503B19-6891-4A01-A94E-5347391CB0A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUtil", "..\..\BlazorApp1\MyUtil\MyUtil.csproj", "{60DE8962-7530-C0DE-117F-E55306B0BEEC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUtil", "..\\..\\MyUtil\MyUtil.csproj", "{60DE8962-7530-C0DE-117F-E55306B0BEEC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

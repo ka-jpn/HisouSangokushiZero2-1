@@ -13,9 +13,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Assets\Img\attack.png" />
-    <None Remove="Assets\Img\central.png" />
-    <None Remove="Assets\Img\defense.png" />
     <None Remove="Assets\Img\map.svg" />
   </ItemGroup>
 
@@ -42,11 +39,11 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.3916" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\BlazorApp1\MyUtil\MyUtil.csproj" />
+    <ProjectReference Include="..\..\MyUtil\MyUtil.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Page Update="MainPage.xaml">

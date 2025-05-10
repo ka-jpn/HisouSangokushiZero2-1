@@ -186,9 +186,21 @@
 									</StackPanel>
 									<StackPanel Height="10"/>
 									<TextBlock FontWeight="Bold" Text="人物の登場期間について" HorizontalAlignment="Center"/>
-									<TextBlock Text="人物に設定された登場年の秋ターン開始時に設定された陣営に加わります" HorizontalAlignment="Center"/>
-									<TextBlock Text="人物に設定された没年の秋ターン開始時に生存していたら死去で陣営から抜けます" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物は首都中枢担当に登用されると陣営に加わります" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された没年以降に生存していたら確率で死去し陣営から抜けます" HorizontalAlignment="Center"/>
 									<TextBlock Text="没年前にも防衛失敗や攻撃失敗で戦死することがあります" HorizontalAlignment="Center"/>
+									<TextBlock Text="ターンごとの死去判定の確率" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年 ・・・ 10%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+1年 ・・・ 19%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+2年 ・・・ 28%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+3年 ・・・ 37%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+4年 ・・・ 46%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+5年 ・・・ 55%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+6年 ・・・ 64%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+7年 ・・・ 73%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+8年 ・・・ 82%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+9年 ・・・ 91%" HorizontalAlignment="Center"/>
+									<TextBlock Text="人物に設定された死去年+10年 ・・・ 100%" HorizontalAlignment="Center"/>
 									<StackPanel Height="10"/>
 									<TextBlock FontWeight="Bold" Text="首都中枢担当人物による登用について" HorizontalAlignment="Center"/>
 									<TextBlock Text="データがある人物の登用、いなければ無名人物の登用が行われます" HorizontalAlignment="Center"/>
@@ -208,12 +220,12 @@
 									<TextBlock FontWeight="Bold" Text="収支計算について" HorizontalAlignment="Center"/>
 									<TextBlock Text="軍資金税収+資本注入 が収入、民政費+内政費+俸禄費 が支出となります" HorizontalAlignment="Center"/>
 									<TextBlock Text="軍資金税収は総内政値×内政力/内政難度、資本注入は10/領土数、" HorizontalAlignment="Center"/>
-									<TextBlock Text="民政費は(1-0.9^内政難度)×総内政値/内政難度、内政費は地域内政担当の人物ランク合計×5、" HorizontalAlignment="Center"/>
-									<TextBlock Text="俸禄費は陣営所属の人物ランク合計/5に加えて筆頭が2、次席が1、地域内政担当と地域防衛担当が1です" HorizontalAlignment="Center"/>
+									<TextBlock Text="民政費は(1-0.9^内政難度)×総内政値/内政難度、内政費は地域内政担当の人物ランク合計×2、" HorizontalAlignment="Center"/>
+									<TextBlock Text="俸禄費は陣営所属の人物ランク合計×0.1に加えて筆頭が1、次席が1、地域内政担当と地域防衛担当が0.5です" HorizontalAlignment="Center"/>
 									<TextBlock Text="ターン更新時に 収入-支出 が資金に合計されます" HorizontalAlignment="Center"/>
 									<StackPanel Height="10"/>
 									<TextBlock FontWeight="Bold" Text="侵攻出撃費用について" HorizontalAlignment="Center"/>
-									<TextBlock Text="(筆頭ランク+次席ランク/2+1)×100が出撃費用となり、資金が足りている時のみ侵攻できます" HorizontalAlignment="Center"/>
+									<TextBlock Text="(筆頭ランク+次席ランク/2+1)×50が出撃費用となり、資金が足りている時のみ侵攻できます" HorizontalAlignment="Center"/>
 									<TextBlock Text="資金が足りていない場合は実行されず、防衛専念と同じ扱いになります(ペナルティなし)" HorizontalAlignment="Center"/>
 									<StackPanel Height="10"/>
 									<TextBlock FontWeight="Bold" Text="内政値・内政上限値について" HorizontalAlignment="Center"/>
@@ -240,9 +252,17 @@
 										<TextBlock FontWeight="Bold" Text="{x:Bind code:GameInfo.scenarios[0].Value}"/>
 									</StackPanel>
 									<TextBlock Text="人物データ" HorizontalAlignment="Center"/>
-									<VariableSizedWrapGrid x:Name="PersonDataListPanel" Orientation="Horizontal" HorizontalAlignment="Center"/>
+									<VariableSizedWrapGrid x:Name="PersonDataListPanel1" Orientation="Horizontal" HorizontalAlignment="Center"/>
 									<TextBlock Text="陣営データ" HorizontalAlignment="Center"/>
-									<VariableSizedWrapGrid x:Name="CountryDataListPanel" Orientation="Horizontal" HorizontalAlignment="Center"/>
+									<VariableSizedWrapGrid x:Name="CountryDataListPanel1" Orientation="Horizontal" HorizontalAlignment="Center"/>
+									<StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+										<TextBlock FontWeight="Bold" Text="シナリオ２："/>
+										<TextBlock FontWeight="Bold" Text="{x:Bind code:GameInfo.scenarios[1].Value}"/>
+									</StackPanel>
+									<TextBlock Text="人物データ" HorizontalAlignment="Center"/>
+									<VariableSizedWrapGrid x:Name="PersonDataListPanel2" Orientation="Horizontal" HorizontalAlignment="Center"/>
+									<TextBlock Text="陣営データ" HorizontalAlignment="Center"/>
+									<VariableSizedWrapGrid x:Name="CountryDataListPanel2" Orientation="Horizontal" HorizontalAlignment="Center"/>
 								</StackPanel>
 								<StackPanel x:Name="ChangeLogPanel" Visibility="Collapsed">
 

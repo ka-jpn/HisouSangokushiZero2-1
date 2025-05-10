@@ -11,12 +11,12 @@ namespace 悲愴三国志Zero2_1.Code {
 		internal static decimal GetOutFunds(Game game,ECountry country) {
 			List<PersonParam> deployedPersonParams = [..Enum.GetValues<ERole>().SelectMany(role => Person.GetAlivePersonMap(game,country,role).ExceptBy(Person.GetWaitPostPersonMap(game,country,role).Keys,v => v.Key).Select(v => v.Value))];
 			decimal backCost = Math.Round((decimal)(1-Math.Pow(0.9,(double)GetAffairDifficult(game,country)))*GetTotalAffair(game,country)/GetAffairDifficult(game,country),4);
-			int roleCost = deployedPersonParams.Sum(v => v.Post?.PostKind.MaybeHead==PostHead.main ? 2 : v.Post?.PostKind.MaybeHead==PostHead.sub ? 1 : v.Post?.PostKind.MaybeArea!=null ? 1 : 0);
-			int affairCost = deployedPersonParams.Sum(v => v.Post?.PostKind.MaybeArea!=null&&v.Post?.PostRole==ERole.affair ? v.Rank*5 : 0);
-			decimal personCost = deployedPersonParams.Sum(v => v.Rank/5m);
+			decimal roleCost = deployedPersonParams.Sum(v => v.Post?.PostKind.MaybeHead==PostHead.main ? 1 : v.Post?.PostKind.MaybeHead==PostHead.sub ? 0.5m : v.Post?.PostKind.MaybeArea!=null ? 0.5m : 0);
+			decimal affairCost = deployedPersonParams.Sum(v => v.Post?.PostKind.MaybeArea!=null&&v.Post?.PostRole==ERole.affair ? v.Rank*2 : 0);
+			decimal personCost = deployedPersonParams.Sum(v => v.Rank/10m);
 			return backCost+roleCost+affairCost+personCost;
 		}
-		internal static decimal CalcAttackFunds(Game game,ECountry country) => Commander.GetAttackCommander(game,country).MyApplyF(v => Commander.CommanderRank(game,v,ERole.attack)).MyApplyF(attackRank => (attackRank+2)*50);
+		internal static decimal CalcAttackFunds(Game game,ECountry country) => Commander.GetAttackCommander(game,country).MyApplyF(v => Commander.CommanderRank(game,v,ERole.attack)).MyApplyF(attackRank => (attackRank+1)*50);
 		internal static EArea? GetTargetArea(Game game) => game.SelectTarget;
 		internal static EArea? GetInvadeArea(Game game,ECountry? country) => country?.MyApplyF(game.CountryMap.GetValueOrDefault)?.Invade;
 		internal static int GetAreaNum(Game game,ECountry country) => game.AreaMap.Values.Where(v => v.Country==country).Count();
