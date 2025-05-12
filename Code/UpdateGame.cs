@@ -52,7 +52,7 @@ namespace 悲愴三国志Zero2_1.Code {
 				return game with { AreaMap=game.AreaMap.MyUpdate(targetArea,(_,areaInfo) => areaInfo with { AffairParam=areaInfo.AffairParam with { AffairNow=Math.Round(areaInfo.AffairParam.AffairNow*0.95m,4) } }) };
 			}
 		}
-		private static Game SleepCountry(Game game,ECountry attackCountry,int sleepTurnNum) => game with { CountryMap=game.CountryMap.MyUpdate(attackCountry,(_,countryInfo) => countryInfo with { SleepTurnNum=sleepTurnNum+1 }) };
+		private static Game SleepCountry(Game game,ECountry attackCountry,int sleepTurnNum) => game with { CountryMap=game.CountryMap.MyUpdate(attackCountry,(_,countryInfo) => countryInfo with { SleepTurnNum=sleepTurnNum }) };
 		private static Game DeathCommander(Game game,CommanderType commander,ERole role) {
 			List<PersonType> deathPersons = new PersonType?[] { DeathJudge() ? commander.MainPerson : null,DeathJudge() ? commander.SubPerson : null }.MyNonNull();
 			return deathPersons.Count==0 ? game : AppendLogMessage(game,[Text.BattleDeathPersonText(role,deathPersons,Lang.ja)]).MyApplyF(game => UpdatePersonMap(game,deathPersons));
@@ -62,7 +62,7 @@ namespace 悲愴三国志Zero2_1.Code {
 		internal static Game NextTurn(Game game) {
 			return game.MyApplyF(UpdateCapitalArea).MyApplyF(AddTurn).MyApplyF(DecrementSleep).MyApplyF(InOutFunds).MyApplyF(AddAffair).MyApplyF(InitAppearPersonPost).MyApplyF(RemoveDeathPersonPost).MyApplyF(PutWaitPersonPost).MyApplyF(AutoPutPostCPU);
 			static Game AddTurn(Game game) => game with { PlayTurn=game.PlayTurn+1 };
-			static Game DecrementSleep(Game game) => game with { CountryMap=game.CountryMap.ToDictionary(v => v.Key,v => v.Value with { SleepTurnNum=Math.Max(0,v.Value.SleepTurnNum-1) }) };
+			static Game DecrementSleep(Game game) => game with { CountryMap=game.CountryMap.ToDictionary(v => v.Key,v => game.ArmyTargetMap.GetValueOrDefault(v.Key)==null ? v.Value with { SleepTurnNum=Math.Max(0,v.Value.SleepTurnNum-1) } : v.Value) };
 			static Game InOutFunds(Game game) => game with { CountryMap=game.CountryMap.ToDictionary(v => v.Key,v => v.Value with { Fund=v.Value.Fund+Country.GetInFunds(game,v.Key)-Country.GetOutFunds(game,v.Key) }) };
 			static Game AddAffair(Game game) => game with {
 				AreaMap=game.AreaMap.ToDictionary(area => area.Key,area => area.Value with {

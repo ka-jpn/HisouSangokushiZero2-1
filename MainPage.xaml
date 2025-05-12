@@ -25,6 +25,7 @@
 						<Grid x:Name="MapInnerPanel" HorizontalAlignment="Left" VerticalAlignment="Top" Width="{x:Bind local:MainPage.mapSize.Width}" Height="{x:Bind local:MainPage.mapSize.Height}">
 							<Image Source="/Assets/Img/map.svg" Stretch="Fill"></Image>
 							<Canvas x:Name="MapElementsCanvas"/>
+							<Canvas x:Name="MapAnimationElementsCanvas"/>
 						</Grid>
 					</Grid>
 				</ScrollView>
