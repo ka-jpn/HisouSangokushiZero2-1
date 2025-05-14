@@ -247,12 +247,12 @@ namespace 悲愴三国志Zero2_1 {
 							new TextBlock { Text="/" },
 							new TextBlock { Text=areaInfo.Value.AffairParam.AffairsMax.ToString("0") },
 						]),
-						new TextBlock { Text=areaInfo.Value.Country?.MyApplyF(country=>game.CountryMap.GetValueOrDefault(country)?.SleepTurnNum.MyApplyF(v=>v>0?$"休み {v}":null)+(Country.IsFocusDefense(game,country)?"(防)":null)),TextAlignment=TextAlignment.Center }
+						new TextBlock { Text=areaInfo.Value.Country?.MyApplyF(country=>(Country.IsSleep(game,country)?$"休み {Country.GetSleepTurn(game,country)}":null)+(Country.IsFocusDefense(game,country)?"(防)":null)),TextAlignment=TextAlignment.Center }
 				];
 				static Game PushAreaPanel(MainPage page,Game game,KeyValuePair<EArea,AreaInfo> areaInfo) {
 					return game.Phase==Phase.Starting ? areaInfo.Value.Country?.MyApplyF(country => SelectPlayCountry(page,game,country))??game : Area.IsPlayerSelectable(game,areaInfo.Key) ? SelectTarget(page,game,areaInfo.Value.Country!=game.PlayCountry ? areaInfo.Key : null) : game;
 					static Game SelectPlayCountry(MainPage page,Game game,ECountry playCountry) => UpdateGame.AttachGameStartData(game,playCountry).MyApplyA(game => { UpdateCountryPostPersons(page,game); UpdateCountryInfoPanel(page,game); });
-					static Game SelectTarget(MainPage page,Game game,EArea? area) => (game with { ArmyTargetMap=game.PlayCountry?.MyApplyF(playCountry => game.ArmyTargetMap.MyApplyA(map => map[playCountry]=area))??game.ArmyTargetMap }).MyApplyA(game => { UpdateCountryInfoPanel(page,game); });
+          static Game SelectTarget(MainPage page,Game game,EArea? area) => game.PlayCountry?.MyApplyF(playCountry => game.Phase == Phase.Planning && !Country.IsSleep(game,playCountry) ? (game with { ArmyTargetMap = game.ArmyTargetMap.MyAdd(playCountry,null).MyUpdate(playCountry,(_,_) => area) ?? game.ArmyTargetMap }).MyApplyA(game => { UpdateCountryInfoPanel(page,game); }) : null) ?? game;
 				}
 			}
 		}
@@ -278,86 +278,86 @@ namespace 悲愴三国志Zero2_1 {
 				static StackPanel GetPersonPostLinePanel(MainPage page,Game game,ERole role,int rowNo,Dictionary<PersonType,PersonParam> personMap) => new StackPanel { Orientation=Orientation.Horizontal }.MySetChildren([.. Enumerable.Range(0,5).Select(i => CreatePersonPutPanel(page,game,new(role,new(rowNo*5+i)),personMap,(rowNo*5+i+1).ToString()))]);
 			}
 		}
-		static void UpdateCountryInfoPanel(MainPage page,Game game) {
-			Button nextPhaseButton = new Button() { HorizontalAlignment=HorizontalAlignment.Stretch,Background=new SolidColorBrush(Color.FromArgb(100,100,100,100)),Height=page.FontSize*4.75 }.MySetChild(new TextBlock { Text=Code.Text.EndPhaseButtonText(game.Phase,Lang.ja) });
-			nextPhaseButton.Click+=(_,_) => { MainPage.game=MainPage.game.Phase==Phase.SelectScenario ? SelectScenario(page,MainPage.game) : MainPage.game.Phase==Phase.Starting ? StartGame(page,MainPage.game) : MainPage.game.Phase==Phase.Planning ? EndPlanningPhase(page,MainPage.game) : EndExecutionPhase(page,MainPage.game); UpdateCountryInfoPanel(page,MainPage.game); };
-			page.CountryInfoContentsPanel.MySetChildren(MainPage.game.Phase==Phase.SelectScenario ? ShowSelectScenario(page,game,nextPhaseButton) : game.PlayCountry==null ? NotSelectingCountry(game) : ShowCountryInfo(game,nextPhaseButton));
-			static List<UIElement> ShowSelectScenario(MainPage page,Game game,Button nextPhaseButton) => [
-				new StackPanel{ Height=BasicStyle.fontsize*3 },
-				new TextBlock { Text="シナリオ",TextAlignment=TextAlignment.Center },
-				new ComboBox { FontSize=24,HorizontalAlignment=HorizontalAlignment.Center,SelectedIndex=GameInfo.scenarios.MyGetIndex(v => v==game.NowScenario)??0,Foreground=new SolidColorBrush(Colors.Black),Background=new SolidColorBrush(Colors.White) }.MyApplyA(elem => GameInfo.scenarios.Select(v => v.Value).ToList().ForEach(elem.Items.Add)).MyApplyA(v=>v.SelectionChanged+=(_,_) => (v.SelectedItem as string)?.MyApplyA(scenarioName => InitGame(page,new(scenarioName)))),
-				new TextBlock { Text=$"{ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.StartYear}年開始{ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.EndYear}年終了",FontSize=20,TextAlignment=TextAlignment.Center },
-				new StackPanel{ Height=BasicStyle.fontsize*3},
-				nextPhaseButton
-			];
-			static List<UIElement> NotSelectingCountry(Game game) => [
-				new TextBlock{ Text=Turn.GetCalendarText(game),TextAlignment=TextAlignment.Center },
-				new StackPanel{ Height=BasicStyle.fontsize*4 },
-				new TextBlock{ Text=$"プレイ勢力を選択後",FontSize=20,TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"情報が表示されます",FontSize=20,TextAlignment=TextAlignment.Center },
-				new StackPanel{ Height=BasicStyle.fontsize*4 }
-			];
-			static List<UIElement> ShowCountryInfo(Game game,Button nextPhaseButton) => [
-				new TextBlock{ Text=Turn.GetCalendarText(game),TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"プレイ勢力:{game.PlayCountry}",TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"首都:{game.PlayCountry?.MyApplyF(country=>Area.GetCapitalArea(game,country))}",TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"資金:{game.PlayCountry?.MyApplyF(game.CountryMap.GetValueOrDefault)?.Fund.ToString("0.####")}",TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"内政力:{game.PlayCountry?.MyApplyF(country=>Country.GetAffairPower(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"内政難度:{game.PlayCountry?.MyApplyF(country=>Country.GetAffairDifficult(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"総内政値:{game.PlayCountry?.MyApplyF(country=>Country.GetTotalAffair(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"支出:{game.PlayCountry?.MyApplyF(country=>Country.GetOutFunds(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"収入:{game.PlayCountry?.MyApplyF(country=>Country.GetInFunds(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
-				new TextBlock{ Text=$"侵攻:{Country.GetTargetArea(game)?.ToString()??"なし"}",TextAlignment=TextAlignment.Center },
-				nextPhaseButton,
-			];
-			static Game SelectScenario(MainPage page,Game game) => (game with { Phase=Phase.Starting }).MyApplyA(v => UpdateCountryInfoPanel(page,v));
-			static Game StartGame(MainPage page,Game game) => (game with { Phase=Phase.Planning }).MyApplyA(v => UpdateAreaUI(page,v));
-			static Game EndPlanningPhase(MainPage page,Game game) {
-				return game.MyApplyF(CalcArmyTarget).MyApplyA(game => UpdateAreaUI(page,game)).MyApplyF(game => game with { Phase=Phase.Execution }).MyApplyF(game => Execution(page,game)).MyApplyA(game => UpdateLogMessageElem(page,game));
-				static Game CalcArmyTarget(Game game) {
-					Dictionary<ECountry,EArea?> NPCArmyTargetMap = game.CountryMap.Where(country => country.Key!=game.PlayCountry&&country.Value.SleepTurnNum==0).ToDictionary(country => country.Key,country => country.Key==ECountry.漢 ? null : RandomSelectNPCAttackTarget(game,country.Key));
-					return game with { ArmyTargetMap=new([.. NPCArmyTargetMap,.. game.ArmyTargetMap.Where(v => v.Key==game.PlayCountry)]) };
-					static EArea? RandomSelectNPCAttackTarget(Game game,ECountry country) => Area.GetAdjacentAnotherCountryAllAreas(game,country).MyNullable().Append(null).MyPickAny().MyApplyF(area => area?.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country!=null&&MyRandom.RandomJudge(0.9) ? null : area);			
-				}
-				static Game Execution(MainPage page,Game game) {
-					Microsoft.UI.Dispatching.DispatcherQueue dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-					Game ExecutionedGame = ArmyAttack(game);
-					game.ArmyTargetMap.Where(v=>v.Value!=null).ToList().ForEach(async v => {
-						Point? srcPoint = Area.GetCapitalArea(game,v.Key)?.MyApplyF(capital => Area.GetAreaPoint(game,capital,mapSize,areaSize,mapGridCount,infoFrameWidth.Value))?.MyApplyF(v => v with { X=v.X-BasicStyle.fontsize*2,Y=v.Y-BasicStyle.fontsize*2 });
-						Point? dstPoint = v.Value?.MyApplyF(target => Area.GetAreaPoint(game,target,mapSize,areaSize,mapGridCount,infoFrameWidth.Value))?.MyApplyF(v => v with { X=v.X-BasicStyle.fontsize*2,Y=v.Y-BasicStyle.fontsize*2 });
-						Image attackImage = new() { Source=new SvgImageSource(new($"ms-appx:///Assets/Img/army.svg")),Width=BasicStyle.fontsize*4,Height=BasicStyle.fontsize*4 };
-						page.MapAnimationElementsCanvas.Children.Add(attackImage);
-						await Task.Run(async () => {
-							foreach(double lerpWeight in Enumerable.Range(0,100+1).Select(v=>(double)v/100)) {
-								dispatcher.TryEnqueue(() => {
-									srcPoint?.MyApplyA(src => dstPoint?.MyApplyA(dst => {
-										Canvas.SetLeft(attackImage,double.Lerp(src.X,dst.X,lerpWeight));
-										Canvas.SetTop(attackImage,double.Lerp(src.Y,dst.Y,lerpWeight));
-									}));
-								});
-								await Task.Delay(10);
-							}
-							dispatcher.TryEnqueue(() => UpdateAreaUI(page,ExecutionedGame));
-						});
-					});
-					return ExecutionedGame;
-				}
-			}
-			static Game EndExecutionPhase(MainPage page,Game game) {
-				page.MapAnimationElementsCanvas.MySetChildren([]);
-				return game.MyApplyF(UpdateGame.NextTurn).MyApplyA(v => UpdateAreaUI(page,v)).MyApplyA(game => UpdateCountryPostPersons(page,game)).MyApplyF(v => v with { Phase=Phase.Planning,ArmyTargetMap= [] });
-			}	 
-			static Game ArmyAttack(Game game) {
-				return game.CountryMap.Aggregate(game,(game,countryInfo) => {
-					EArea? targetArea = countryInfo.Value.Fund>=Country.CalcAttackFunds(game,countryInfo.Key) ? game.ArmyTargetMap.GetValueOrDefault(countryInfo.Key) : null;
-					ECountry? defenseCountry = targetArea?.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country;
-					return targetArea!=null ? ExeAttack(game,countryInfo.Key,targetArea.Value,defenseCountry) : game.ArmyTargetMap.ContainsKey(countryInfo.Key) ? ExeDefense(game,countryInfo.Key) : ExeRest(game,countryInfo.Key,countryInfo.Value.SleepTurnNum);
-					static Game ExeAttack(Game game,ECountry country,EArea targetArea,ECountry? defenseCountry) => game.MyApplyF(game => UpdateGame.Attack(game,country,targetArea,defenseCountry,Country.IsFocusDefense(game,defenseCountry)));
-					static Game ExeDefense(Game game,ECountry country) => game.MyApplyF(game => UpdateGame.Defense(game,country));
-					static Game ExeRest(Game game,ECountry country,int remainRestTurn) => game.MyApplyF(game => UpdateGame.Rest(game,country,remainRestTurn));
-				});
-			}
-		}
+    static void UpdateCountryInfoPanel(MainPage page,Game game) {
+      Button nextPhaseButton = new Button() { HorizontalAlignment = HorizontalAlignment.Stretch,Background = new SolidColorBrush(Color.FromArgb(100,100,100,100)),Height = page.FontSize * 4.75 }.MySetChild(new TextBlock { Text = Code.Text.EndPhaseButtonText(game.Phase,Lang.ja) });
+      nextPhaseButton.Click += (_,_) => { MainPage.game = MainPage.game.Phase == Phase.SelectScenario ? SelectScenario(page,MainPage.game) : MainPage.game.Phase == Phase.Starting ? StartGame(page,MainPage.game) : MainPage.game.Phase == Phase.Planning ? EndPlanningPhase(page,MainPage.game) : EndExecutionPhase(page,MainPage.game); UpdateCountryInfoPanel(page,MainPage.game); };
+      page.CountryInfoContentsPanel.MySetChildren(MainPage.game.Phase == Phase.SelectScenario ? ShowSelectScenario(page,game,nextPhaseButton) : game.PlayCountry == null ? NotSelectingCountry(game) : ShowCountryInfo(game,nextPhaseButton));
+      static List<UIElement> ShowSelectScenario(MainPage page,Game game,Button nextPhaseButton) => [
+        new StackPanel{ Height=BasicStyle.fontsize*3 },
+        new TextBlock { Text="シナリオ",TextAlignment=TextAlignment.Center },
+        new ComboBox { FontSize=24,HorizontalAlignment=HorizontalAlignment.Center,SelectedIndex=GameInfo.scenarios.MyGetIndex(v => v==game.NowScenario)??0,Foreground=new SolidColorBrush(Colors.Black),Background=new SolidColorBrush(Colors.White) }.MyApplyA(elem => GameInfo.scenarios.Select(v => v.Value).ToList().ForEach(elem.Items.Add)).MyApplyA(v=>v.SelectionChanged+=(_,_) => (v.SelectedItem as string)?.MyApplyA(scenarioName => InitGame(page,new(scenarioName)))),
+        new TextBlock { Text=$"{ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.StartYear}年開始{ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.EndYear}年終了",FontSize=20,TextAlignment=TextAlignment.Center },
+        new StackPanel{ Height=BasicStyle.fontsize*3},
+        nextPhaseButton
+      ];
+      static List<UIElement> NotSelectingCountry(Game game) => [
+        new TextBlock{ Text=Turn.GetCalendarText(game),TextAlignment=TextAlignment.Center },
+        new StackPanel{ Height=BasicStyle.fontsize*4 },
+        new TextBlock{ Text=$"プレイ勢力を選択後",FontSize=20,TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"情報が表示されます",FontSize=20,TextAlignment=TextAlignment.Center },
+        new StackPanel{ Height=BasicStyle.fontsize*4 }
+      ];
+      static List<UIElement> ShowCountryInfo(Game game,Button nextPhaseButton) => [
+        new TextBlock{ Text=Turn.GetCalendarText(game),TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"プレイ勢力:{game.PlayCountry}",TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"首都:{game.PlayCountry?.MyApplyF(country=>Area.GetCapitalArea(game,country))}",TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"資金:{game.PlayCountry?.MyApplyF(game.CountryMap.GetValueOrDefault)?.Fund.ToString("0.####")}",TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"内政力:{game.PlayCountry?.MyApplyF(country=>Country.GetAffairPower(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"内政難度:{game.PlayCountry?.MyApplyF(country=>Country.GetAffairDifficult(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"総内政値:{game.PlayCountry?.MyApplyF(country=>Country.GetTotalAffair(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"支出:{game.PlayCountry?.MyApplyF(country=>Country.GetOutFund(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"収入:{game.PlayCountry?.MyApplyF(country=>Country.GetInFund(game,country)).ToString("0.####")}",TextAlignment=TextAlignment.Center },
+        new TextBlock{ Text=$"侵攻:{Country.GetTargetArea(game,game.PlayCountry)?.ToString()??"なし"}",TextAlignment=TextAlignment.Center },
+        nextPhaseButton,
+      ];
+      static Game SelectScenario(MainPage page,Game game) => (game with { Phase = Phase.Starting }).MyApplyA(v => UpdateCountryInfoPanel(page,v));
+      static Game StartGame(MainPage page,Game game) => (game with { Phase = Phase.Planning }).MyApplyA(v => UpdateAreaUI(page,v));
+      static Game EndPlanningPhase(MainPage page,Game game) {
+        return game.MyApplyF(CalcArmyTarget).MyApplyF(game => game with { Phase = Phase.Execution }).MyApplyA(game => UpdateAreaUI(page,game)).MyApplyF(game => Execution(page,game)).MyApplyA(game => UpdateLogMessageElem(page,game));
+        static Game CalcArmyTarget(Game game) {
+          Dictionary<ECountry,EArea?> NPCArmyTargetMap = game.CountryMap.Keys.Except(game.PlayCountry.HasValue ? [game.PlayCountry.Value] : []).Where(country => !Country.IsSleep(game,country)).ToDictionary(country => country,country => country == ECountry.漢 ? null : RandomSelectNPCAttackTarget(game,country));
+          return game with { ArmyTargetMap = new([.. NPCArmyTargetMap,.. game.ArmyTargetMap.Where(v => v.Key == game.PlayCountry)]) };
+          static EArea? RandomSelectNPCAttackTarget(Game game,ECountry country) => Area.GetAdjacentAnotherCountryAllAreas(game,country).MyNullable().Append(null).MyPickAny().MyApplyF(area => area?.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country != null && MyRandom.RandomJudge(0.9) ? null : area);
+        }
+        static Game Execution(MainPage page,Game game) {
+          Microsoft.UI.Dispatching.DispatcherQueue dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+          return ArmyAttack(game).MyApplyA(game => game.ArmyTargetMap.Where(v => v.Value != null).ToList().ForEach(async v => {
+            Point? srcPoint = Area.GetCapitalArea(game,v.Key)?.MyApplyF(capital => Area.GetAreaPoint(game,capital,mapSize,areaSize,mapGridCount,infoFrameWidth.Value))?.MyApplyF(v => v with { X = v.X - BasicStyle.fontsize * 2,Y = v.Y - BasicStyle.fontsize * 2 });
+            Point? dstPoint = v.Value?.MyApplyF(target => Area.GetAreaPoint(game,target,mapSize,areaSize,mapGridCount,infoFrameWidth.Value))?.MyApplyF(v => v with { X = v.X - BasicStyle.fontsize * 2,Y = v.Y - BasicStyle.fontsize * 2 });
+            Image attackImage = new() { Source = new SvgImageSource(new($"ms-appx:///Assets/Img/army.svg")),Width = BasicStyle.fontsize * 4,Height = BasicStyle.fontsize * 4 };
+            page.MapAnimationElementsCanvas.Children.Add(attackImage);
+            await Task.Run(async () => {
+              foreach(double lerpWeight in Enumerable.Range(0,100 + 1).Select(v => (double)v / 100)) {
+                dispatcher.TryEnqueue(() => {
+                  srcPoint?.MyApplyA(src => dstPoint?.MyApplyA(dst => {
+                    Canvas.SetLeft(attackImage,double.Lerp(src.X,dst.X,lerpWeight));
+                    Canvas.SetTop(attackImage,double.Lerp(src.Y,dst.Y,lerpWeight));
+                  }));
+                });
+                await Task.Delay(10);
+              }
+              dispatcher.TryEnqueue(() => UpdateAreaUI(page,game));
+            });
+          }));
+        }
+      }
+      static Game EndExecutionPhase(MainPage page,Game game) {
+        page.MapAnimationElementsCanvas.MySetChildren([]);
+        return game.MyApplyF(UpdateGame.NextTurn).MyApplyA(game => UpdateCountryPostPersons(page,game)).MyApplyF(v => v with { Phase = Phase.Planning,ArmyTargetMap = [] }).MyApplyA(v => UpdateAreaUI(page,v));
+      }
+      static Game ArmyAttack(Game game) {
+        return game.CountryMap.Keys.OrderBy(country => Country.GetTotalAffair(game,country)).Aggregate(game,(game,country) => {
+          return game.ArmyTargetMap.GetValueOrDefault(country) is EArea target ? TryAttack(game,country,target) : game.ArmyTargetMap.ContainsKey(country) ? ExeDefense(game,country) : ExeRest(game,country);
+          static Game TryAttack(Game game,ECountry country,EArea targetArea) {
+            return Country.SuccessAttack(game,country) ? ExeAttack(game,country,targetArea) : FailAttack(game,country);
+            static Game ExeAttack(Game game,ECountry country,EArea targetArea) => targetArea.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country.MyApplyF(defeseSide => UpdateGame.Attack(game,country,targetArea,defeseSide,Country.IsFocusDefense(game,defeseSide))) ?? game;
+            static Game FailAttack(Game game,ECountry country) => game.MyApplyF(game => UpdateGame.Defense(game,country,true)).MyApplyF(game=>game with { ArmyTargetMap=game.ArmyTargetMap.MyRemove(country) });
+          }
+          static Game ExeDefense(Game game,ECountry country) => game.MyApplyF(game => UpdateGame.Defense(game,country,false));
+          static Game ExeRest(Game game,ECountry country) => game.MyApplyF(game => UpdateGame.Rest(game,country));
+        });
+      }
+    }
 		static Grid CreatePersonPutPanel(MainPage page,Game game,PostType post,Dictionary<PersonType,PersonParam> putPersonMap,string backText) {
 			Grid personPutPanel = new() { Width=personPutSize.Width,Height=personPutSize.Height,BorderBrush=new SolidColorBrush(GetPostFrameColor(game,post.PostKind.MaybeArea)),BorderThickness=new(postFrameWidth),Background=new SolidColorBrush(Colors.Transparent) };
 			StackPanel personPutInnerPanel = new StackPanel().MySetChildren(putPersonMap.MyNullable().FirstOrDefault(v => v?.Value.Post==post) is KeyValuePair<PersonType,PersonParam> param ? [CreatePersonPanel(page,param)] : []);

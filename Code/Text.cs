@@ -17,7 +17,7 @@ namespace 悲愴三国志Zero2_1.Code {
 		internal static string RoleToText(ERole role,Lang lang) => Ja.RoleToText(role);
 		internal static string EndPhaseButtonText(Phase phase,Lang lang) => Ja.EndPhaseButtonText(phase);
 		internal static string? DeathPersonText(List<PersonType> deathPersons,Lang lang) => Ja.DeathPersonText(deathPersons);
-		internal static string DefenseText(ECountry country,Lang lang) => Ja.DefenseText(country);
+		internal static string DefenseText(ECountry country,bool isTryAttack,Lang lang) => Ja.DefenseText(country,isTryAttack);
 		internal static string RestText(ECountry country,int remainRestTurn,Lang lang) => Ja.RestText(country,remainRestTurn);
 		internal static string ChangeHasCountryText(ECountry attackCountry,ECountry? defenseCountry,EArea targetArea,Lang lang) => Ja.ChangeHasCountryText(attackCountry,defenseCountry,targetArea);
 		internal static string? FallCapitalText(ECountry? defenseCountry,List<PersonType> deathPersons,Lang lang) => Ja.FallCapitalText(defenseCountry,deathPersons);
@@ -31,7 +31,7 @@ namespace 悲愴三国志Zero2_1.Code {
 			internal static string RoleToText(ERole role) => role switch { ERole.central => "中枢", ERole.affair => "内政", ERole.defense => "防衛", ERole.attack => "攻撃" };
 			internal static string EndPhaseButtonText(Phase phase) => phase==Phase.SelectScenario ? "シナリオ決定" : phase==Phase.Starting ? "勢力決定" : phase==Phase.Planning ? "軍議終了" : "確認";
 			internal static string? DeathPersonText(List<PersonType> deathPersons) => deathPersons.Count!=0 ? $"{string.Join("と",deathPersons.Select(v => v.Value))}が死去" : null;
-			internal static string DefenseText(ECountry country) => $"{country}は防衛に専念";
+			internal static string DefenseText(ECountry country,bool isTryAttack) => $"{(isTryAttack?"(資金不足で攻撃中止)":null)}{country}は防衛に専念";
 			internal static string RestText(ECountry country,int remainRestTurn) => $"{country}は国力回復中(残り{remainRestTurn}ターン)";
 			internal static string ChangeHasCountryText(ECountry attackCountry,ECountry? defenseCountry,EArea targetArea) => $"{GetCountryText(defenseCountry)}領の{targetArea}が{GetCountryText(attackCountry)}領に";
 			internal static string? FallCapitalText(ECountry? defenseCountry,List<PersonType> deathPersons) => deathPersons.Count!=0 ? $"首都陥落により{GetCountryText(defenseCountry)}の{string.Join("と",deathPersons.Select(v => v.Value))}が戦死" : null;

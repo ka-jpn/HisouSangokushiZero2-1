@@ -99,8 +99,9 @@
 									</StackPanel>
 									<StackPanel Height="10"/>
 									<TextBlock FontWeight="Bold" Text="陣営の軍議・行動フェイズ順について" HorizontalAlignment="Center"/>
-									<TextBlock Text="並行して実行されます" HorizontalAlignment="Center"/>
-									<TextBlock Text="NPC勢力は他の勢力のフェイズを参照せずにフェイズ内容を決定し、プレイヤーを特別視しません" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="フェイズは並行して実行されます" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="ただし攻撃先地域が競合した場合は総内政値が小さい陣営から戦闘権を得ます" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="NPC勢力は他の勢力のフェイズを参照せずにフェイズ内容を決定し、プレイヤーを特別視しません" HorizontalAlignment="Center"/>
 									<StackPanel Height="10"/>
 									<TextBlock FontWeight="Bold" Text="プレイヤーの軍議フェイズについて" HorizontalAlignment="Center"/>
 									<TextBlock Text="人物の配置移動と侵攻の指令ができます、フェイズ内であれば指令しなおせます" HorizontalAlignment="Center"/>

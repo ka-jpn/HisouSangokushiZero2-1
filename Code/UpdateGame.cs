@@ -1,8 +1,8 @@
 ﻿using MyUtil;
 using static 悲愴三国志Zero2_1.Code.DefType;
-using PostType = 悲愴三国志Zero2_1.Code.DefType.Post;
 using CommanderType = 悲愴三国志Zero2_1.Code.DefType.Commander;
 using PersonType = 悲愴三国志Zero2_1.Code.DefType.Person;
+using PostType = 悲愴三国志Zero2_1.Code.DefType.Post;
 namespace 悲愴三国志Zero2_1.Code {
 	internal static class UpdateGame {
 		internal static Game SetPersonPost(Game game,Dictionary<PersonType,PostType> postMap) => game with { PersonMap=game.PersonMap.ToDictionary(v => v.Key,v => postMap.TryGetValue(v.Key,out PostType? post) ? v.Value with { Post=post } : v.Value) };
@@ -15,11 +15,11 @@ namespace 悲愴三国志Zero2_1.Code {
 		}
 		internal static Game PutWaitPersonPost(Game game) => game.CountryMap.Keys.SelectMany(country => Enum.GetValues<ERole>().SelectMany(role => Post.GetPutWaitPost(game,country,role))).ToDictionary().MyApplyF(v => SetPersonPost(game,v));
 		internal static Game RemoveNaturalDeathPersonPost(Game game) => game.CountryMap.Keys.SelectMany(country => Enum.GetValues<ERole>().SelectMany(role => Person.GetDeathPostPersonMap(game,country,role).Keys)).ToList().MyApplyF(deathPersons => RemovePersonPost(game,deathPersons).MyApplyF(game => game with { PersonMap=game.PersonMap.ToDictionary(v => v.Key,v => deathPersons.Contains(v.Key) ? v.Value with { GameDeathTurn=game.PlayTurn } : v.Value) }).MyApplyF(game => AppendLogMessage(game,[Text.DeathPersonText([.. deathPersons],Lang.ja)])));
-		internal static Game AutoPutPostCPU(Game game) => game.CountryMap.Keys.Where(v => v!=game.PlayCountry).SelectMany(country => Enum.GetValues<ERole>().SelectMany(role => Post.GetAutoPutPost(game,country,role))).ToDictionary().MyApplyF(v => SetPersonPost(game,v));
+		internal static Game AutoPutPostCPU(Game game) => game.CountryMap.Keys.Except(game.PlayCountry!=null ? [game.PlayCountry.Value] : []).Except([ECountry.漢]).SelectMany(country => Enum.GetValues<ERole>().SelectMany(role => Post.GetAutoPutPost(game,country,role))).ToDictionary().MyApplyF(v => SetPersonPost(game,v));
 		internal static Game PutPersonFromUI(Game game,PersonType? putPerson,PostType? putPost) => putPerson!=null&&putPost!=null ? SetPersonPost(game,new() { { putPerson,putPost } }).MyApplyA(v => v.StateHasChanged?.Invoke()) : game;
 		internal static Game AttachGameStartData(Game game,ECountry? countryName) => countryName is ECountry country ? game with { PlayCountry=country,PlayTurn=0 } : game;
 		internal static Game UpdateCapitalArea(Game game) => game with { CountryMap=game.CountryMap.ToDictionary(v => v.Key,countryInfo => countryInfo.Value with { CapitalArea=Area.ComputeCapitalArea(game,countryInfo.Key) }) };
-		internal static Game PayAttackFunds(Game game,ECountry country) => game with { CountryMap=game.CountryMap.MyUpdate(country,(_,countryInfo) => countryInfo with { Fund=countryInfo.Fund-Country.CalcAttackFunds(game,country) }) };
+		internal static Game PayAttackFunds(Game game,ECountry country) => game with { CountryMap=game.CountryMap.MyUpdate(country,(_,countryInfo) => countryInfo with { Fund=countryInfo.Fund-Country.CalcAttackFund(game,country) }) };
 		internal static Game AppendLogMessage(Game game,List<string?> appendMessages) => game with { LogMessage= [.. game.LogMessage,.. appendMessages.MyNonNull()] };
 		internal static Game CountryAttack(Game game,ECountry attackSide,EArea target,Army attack,Army defense,AttackJudge judge) {
 			return judge switch { AttackJudge.crush => Crush(game,attackSide,target,defense), AttackJudge.win => Win(game,attackSide,target,defense), AttackJudge.lose => Lose(game,attackSide), AttackJudge.rout => Rout(game,attackSide,attack) };
@@ -60,10 +60,9 @@ namespace 悲愴三国志Zero2_1.Code {
 			static Game UpdatePersonMap(Game game,List<PersonType> deathPersons) => game with { PersonMap=deathPersons.Aggregate(game.PersonMap,(fold,value) => fold.MyUpdate(value,(_,param) => param with { Post=null,GameDeathTurn=game.PlayTurn })) };
 		}
 		internal static Game NextTurn(Game game) {
-			return game.MyApplyF(UpdateCapitalArea).MyApplyF(AddTurn).MyApplyF(DecrementSleep).MyApplyF(InOutFunds).MyApplyF(AddAffair).MyApplyF(InitAppearPersonPost).MyApplyF(RemoveDeathPersonPost).MyApplyF(PutWaitPersonPost).MyApplyF(AutoPutPostCPU);
+			return game.MyApplyF(UpdateCapitalArea).MyApplyF(AddTurn).MyApplyF(InOutFunds).MyApplyF(AddAffair).MyApplyF(InitAppearPersonPost).MyApplyF(RemoveDeathPersonPost).MyApplyF(PutWaitPersonPost).MyApplyF(AutoPutPostCPU);
 			static Game AddTurn(Game game) => game with { PlayTurn=game.PlayTurn+1 };
-			static Game DecrementSleep(Game game) => game with { CountryMap=game.CountryMap.ToDictionary(v => v.Key,v => game.ArmyTargetMap.GetValueOrDefault(v.Key)==null ? v.Value with { SleepTurnNum=Math.Max(0,v.Value.SleepTurnNum-1) } : v.Value) };
-			static Game InOutFunds(Game game) => game with { CountryMap=game.CountryMap.ToDictionary(v => v.Key,v => v.Value with { Fund=v.Value.Fund+Country.GetInFunds(game,v.Key)-Country.GetOutFunds(game,v.Key) }) };
+			static Game InOutFunds(Game game) => game with { CountryMap=game.CountryMap.ToDictionary(v => v.Key,v => v.Value with { Fund=v.Value.Fund+Country.GetInFund(game,v.Key)-Country.GetOutFund(game,v.Key) }) };
 			static Game AddAffair(Game game) => game with {
 				AreaMap=game.AreaMap.ToDictionary(area => area.Key,area => area.Value with {
 					AffairParam=area.Value.AffairParam with {
@@ -84,7 +83,9 @@ namespace 悲愴三国志Zero2_1.Code {
 			static Game BattleDefensesideCentralDefense(Game game,AttackResult? countryBattle,ECountry attackCountry,EArea targetArea,Army attackArmy) => countryBattle?.Judge.MyApplyF(judge => AppendLogMessage(game,[countryBattle.InvadeText]).MyApplyF(game => CountryAttack(game,attackCountry,targetArea,attackArmy,countryBattle.Defense,judge)))??game;
 			static Game BattleDefensesideAreaDefense(Game game,AttackResult areaBattle,ECountry attackCountry,EArea targetArea,Army attackArmy) => AppendLogMessage(game,[areaBattle.InvadeText]).MyApplyF(game => areaBattle.Judge.MyApplyF(judge => AreaAttack(game,attackCountry,targetArea,attackArmy,areaBattle.Defense,judge)));
 		}
-		internal static Game Defense(Game game,ECountry country) => AppendLogMessage(game,[Text.DefenseText(country,Lang.ja)]);
-		internal static Game Rest(Game game,ECountry country,int remainRestTurn) => AppendLogMessage(game,[Text.RestText(country,remainRestTurn,Lang.ja)]);
+		internal static Game Defense(Game game,ECountry country,bool isTryAttack) => AppendLogMessage(game,[Text.DefenseText(country,isTryAttack,Lang.ja)]);
+		internal static Game Rest(Game game, ECountry country) {
+			return AppendLogMessage(game, [Text.RestText(country, Country.GetSleepTurn(game,country),Lang.ja)]) with { CountryMap = game.CountryMap.MyUpdate(country, (_, info) => info with { SleepTurnNum = info.SleepTurnNum - 1 }) };
+		}
 	}
 }

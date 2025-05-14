@@ -12,7 +12,7 @@ namespace 悲愴三国志Zero2_1.Code {
 			EArea.南鄭, EArea.房陵, EArea.綿竹, EArea.魚復, EArea.成都, EArea.漢嘉, EArea.涪陵, EArea.朱提, EArea.滇池,
 		];
 		private static readonly Dictionary<EArea,EArea>[] AreaDiffs = [
-			new(),
+			[],
 			new() { { EArea.土垠,EArea.陽楽 },{ EArea.濮陽,EArea.魯 },{ EArea.鄴,EArea.晋陽 },{ EArea.平陽,EArea.離石 },{ EArea.彭城,EArea.陰陵 },{ EArea.鄂,EArea.武昌 },{EArea.秣陵,EArea.建業 },{EArea.綿竹,EArea.葭萌 } }
 		];
 		private static readonly Road[] baseRoadConnections = [
