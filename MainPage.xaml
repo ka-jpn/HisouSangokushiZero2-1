@@ -118,7 +118,7 @@
 										<StackPanel>
 											<TextBlock Text="指令ができず防衛専念状態にもなりません"/>
 											<TextBlock Text="隣接他国領土をクリック：「資金が足りればその地域に侵攻、足りなければ防衛専念」を指令にします"/>
-											<TextBlock Text="自国領土をクリック：「防衛専念(防御ランク補正+2)」を指令にします"/>
+											<TextBlock Text="自国領土をクリック：「防衛専念(防御ランク補正+1)」を指令にします"/>
 										</StackPanel>
 									</StackPanel>
 									<StackPanel Height="10"/>

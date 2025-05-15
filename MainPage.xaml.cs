@@ -10,9 +10,9 @@ using Windows.Foundation;
 using Windows.UI;
 using 悲愴三国志Zero2_1.Code;
 using static 悲愴三国志Zero2_1.Code.DefType;
+using PersonType = 悲愴三国志Zero2_1.Code.DefType.Person;
 using Point = 悲愴三国志Zero2_1.Code.DefType.Point;
 using PostType = 悲愴三国志Zero2_1.Code.DefType.Post;
-using PersonType = 悲愴三国志Zero2_1.Code.DefType.Person;
 namespace 悲愴三国志Zero2_1 {
 	public sealed partial class MainPage:Page {
 		internal enum ViewMode { fit, fix };
@@ -69,7 +69,7 @@ namespace 悲愴三国志Zero2_1 {
 				page.CountryDataListPanel2.MySetChildren([.. CreateCountryDataList(1,2)]);
 				static Color ThresholdEdgeColor(AttackJudge? attackJudge) => attackJudge==AttackJudge.crush ? Color.FromArgb(255,240,135,135) : attackJudge==AttackJudge.win ? Color.FromArgb(255,230,230,65) : attackJudge==AttackJudge.lose ? Color.FromArgb(255,105,225,105) : attackJudge==AttackJudge.rout ? Color.FromArgb(255,135,135,240) : Color.FromArgb(255,165,165,165);
 				static Color ThresholdFillColor(AttackJudge attackJudge) => attackJudge==AttackJudge.crush ? Color.FromArgb(255,240,190,190) : attackJudge==AttackJudge.win ? Color.FromArgb(255,235,235,160) : attackJudge==AttackJudge.lose ? Color.FromArgb(255,175,240,175) : Color.FromArgb(255,190,190,240);
-				static Windows.Foundation.Point GetJudgePoint(AttackJudge? attackJudge,double rankDiff) => new((rankDiff*9+50),Battle.GetThreshold(attackJudge,rankDiff));
+				static Windows.Foundation.Point GetJudgePoint(AttackJudge? attackJudge,double rankDiff) => new(rankDiff*9+50,Battle.GetThreshold(attackJudge,rankDiff));
 				static Windows.Foundation.Point[] GetJudgeShapeCrds(AttackJudge? attackJudge) => [.. new double[] { -5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1,1,2,2.5,3,3.5,4,4.5,5,5.5 }.Select(i => CookPoint(GetJudgePoint(attackJudge,i)))];
 				static Windows.Foundation.Point[] GetJudgePoints(AttackJudge? attackJudge) => [.. new double[] { -5,-4,-3,-2,-1,0,1,2,3,4,5 }.Select(i => GetJudgePoint(attackJudge,i))];
 				static Windows.Foundation.Point CookPoint(Windows.Foundation.Point point) => point with { X=point.X*11.5,Y=point.Y*6 };
@@ -315,9 +315,10 @@ namespace 悲愴三国志Zero2_1 {
       static Game EndPlanningPhase(MainPage page,Game game) {
         return game.MyApplyF(CalcArmyTarget).MyApplyF(game => game with { Phase = Phase.Execution }).MyApplyA(game => UpdateAreaUI(page,game)).MyApplyF(game => Execution(page,game)).MyApplyA(game => UpdateLogMessageElem(page,game));
         static Game CalcArmyTarget(Game game) {
-          Dictionary<ECountry,EArea?> NPCArmyTargetMap = game.CountryMap.Keys.Except(game.PlayCountry.HasValue ? [game.PlayCountry.Value] : []).Where(country => !Country.IsSleep(game,country)).ToDictionary(country => country,country => country == ECountry.漢 ? null : RandomSelectNPCAttackTarget(game,country));
-          return game with { ArmyTargetMap = new([.. NPCArmyTargetMap,.. game.ArmyTargetMap.Where(v => v.Key == game.PlayCountry)]) };
-          static EArea? RandomSelectNPCAttackTarget(Game game,ECountry country) => Area.GetAdjacentAnotherCountryAllAreas(game,country).MyNullable().Append(null).MyPickAny().MyApplyF(area => area?.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country != null && MyRandom.RandomJudge(0.9) ? null : area);
+          Dictionary<ECountry,EArea?> playerArmyTargetMap = game.PlayCountry.MyMaybeToList().Where(country => !Country.IsSleep(game,country)).ToDictionary(v => v,v=> game.ArmyTargetMap.GetValueOrDefault(v));
+          Dictionary<ECountry,EArea?> NPCArmyTargetMap = game.CountryMap.Keys.Except(game.PlayCountry.MyMaybeToList()).Where(country => !Country.IsSleep(game,country)).ToDictionary(country => country,country => country == ECountry.漢 ? null : RandomSelectNPCAttackTarget(game,country));
+          return game with { ArmyTargetMap = new([.. NPCArmyTargetMap,.. playerArmyTargetMap]) };
+          static EArea? RandomSelectNPCAttackTarget(Game game,ECountry country) => Area.GetAdjacentAnotherCountryAllAreas(game,country).MyNullable().Append(null).MyPickAny().MyApplyF(area => area?.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country == null && MyRandom.RandomJudge(0.9) ? null : area);
         }
         static Game Execution(MainPage page,Game game) {
           Microsoft.UI.Dispatching.DispatcherQueue dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
@@ -360,7 +361,7 @@ namespace 悲愴三国志Zero2_1 {
     }
 		static Grid CreatePersonPutPanel(MainPage page,Game game,PostType post,Dictionary<PersonType,PersonParam> putPersonMap,string backText) {
 			Grid personPutPanel = new() { Width=personPutSize.Width,Height=personPutSize.Height,BorderBrush=new SolidColorBrush(GetPostFrameColor(game,post.PostKind.MaybeArea)),BorderThickness=new(postFrameWidth),Background=new SolidColorBrush(Colors.Transparent) };
-			StackPanel personPutInnerPanel = new StackPanel().MySetChildren(putPersonMap.MyNullable().FirstOrDefault(v => v?.Value.Post==post) is KeyValuePair<PersonType,PersonParam> param ? [CreatePersonPanel(page,param)] : []);
+      StackPanel personPutInnerPanel = new StackPanel().MySetChildren([..putPersonMap.MyNullable().FirstOrDefault(v => v?.Value.Post == post).MyMaybeToList().Select(param => CreatePersonPanel(page,param))]);
 			TextBlock personPutBackText = new() { Text=backText,Foreground=new SolidColorBrush(Color.FromArgb(100,100,100,100)),HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center,RenderTransform=new ScaleTransform() { ScaleX=2,ScaleY=2,CenterX=CalcFullWidthLength(backText)*BasicStyle.fontsize/2,CenterY=BasicStyle.textHiehgt/2 } };
 			personPutPanel.PointerEntered+=(_,_) => EnterPersonPanel(MainPage.game,personPutInnerPanel,post);
 			personPutPanel.PointerExited+=(_,_) => ExitPersonPanel(personPutInnerPanel);
