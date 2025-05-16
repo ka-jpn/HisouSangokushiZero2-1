@@ -3,7 +3,7 @@ using Windows.UI;
 using static 悲愴三国志Zero2_1.Code.DefType;
 namespace 悲愴三国志Zero2_1.Code {
 	internal static class Country {
-		internal static Color? GetCountryColor(Game game,ECountry? country) => country?.MyApplyF(game.CountryMap.GetValueOrDefault)?.ViewColor;
+    internal static Color GetCountryColor(Game game,ECountry? country) => country?.MyApplyF(game.CountryMap.GetValueOrDefault)?.ViewColor ?? Color.FromArgb(255,240,240,240);
 		internal static decimal GetTotalAffair(Game game,ECountry country) => game.AreaMap.Where(v => v.Value.Country==country).Sum(v => v.Value.AffairParam.AffairNow*(v.Key==game.CountryMap.GetValueOrDefault(country)?.CapitalArea ? 1.5m : 1m));
 		internal static decimal GetAffairPower(Game game,ECountry country) => Commander.GetAffairsCommander(game,country).MyApplyF(v => Commander.CommanderRank(game,v,ERole.affair)).MyApplyF(affairsRank => affairsRank/5m+1);
 		internal static decimal GetAffairDifficult(Game game,ECountry country) => Math.Round((decimal)Math.Pow(GetAreaNum(game,country),0.5),4);

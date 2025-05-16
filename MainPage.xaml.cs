@@ -28,7 +28,6 @@ namespace 悲愴三国志Zero2_1 {
 		internal static readonly double personRankFontScale = 1.5;
 		internal static readonly double personNameFontScale = 1.75;
 		internal static readonly double infoTextWidth = BasicStyle.fontsize*55;
-		private static readonly Color defaultCountryColor = Color.FromArgb(255,240,240,240);
 		private static readonly Color landRoadColor = Color.FromArgb(150,120,120,50);
 		private static readonly Color waterRoadColor = Color.FromArgb(150,50,50,150);
 		internal static readonly double attackJudgePointSize = 10;
@@ -228,7 +227,7 @@ namespace 悲愴三国志Zero2_1 {
 			static Grid CreateAreaPanel(MainPage page,Game game,KeyValuePair<EArea,AreaInfo> info) {
 				double capitalBorderWidth = 3;
 				Grid areaPanel = new() { Width=areaSize.Width,Height=areaSize.Height,CornerRadius=areaCornerRadius };
-				Border areaBorder = new() { Width=areaSize.Width,Height=areaSize.Height,BorderThickness=new(game.CountryMap.Values.Select(v => v.CapitalArea).Contains(info.Key) ? capitalBorderWidth : 0),CornerRadius=areaCornerRadius,BorderBrush=new SolidColorBrush(Colors.Red),Background=new SolidColorBrush(Country.GetCountryColor(game,info.Value.Country)??defaultCountryColor) };
+				Border areaBorder = new() { Width=areaSize.Width,Height=areaSize.Height,BorderThickness=new(game.CountryMap.Values.Select(v => v.CapitalArea).Contains(info.Key) ? capitalBorderWidth : 0),CornerRadius=areaCornerRadius,BorderBrush=new SolidColorBrush(Colors.Red),Background=new SolidColorBrush(Country.GetCountryColor(game,info.Value.Country)) };
 				Grid areaBackPanel = new() { Width=areaSize.Width,Height=areaSize.Height,Background=new SolidColorBrush(Area.IsPlayerSelectable(game,info.Key) ? Colors.Transparent : Color.FromArgb(100,100,100,100)) };
 				StackPanel areaInnerPanel = new() { Width=areaSize.Width,VerticalAlignment=VerticalAlignment.Center };
 				Area.GetAreaPoint(game,info.Key,mapSize,areaSize,mapGridCount,infoFrameWidth.Value)?.MyApplyA(v=> Canvas.SetLeft(areaPanel,v.X-areaSize.Width/2)).MyApplyA(v => Canvas.SetTop(areaPanel,v.Y-areaSize.Height/2));
@@ -315,31 +314,33 @@ namespace 悲愴三国志Zero2_1 {
       static Game EndPlanningPhase(MainPage page,Game game) {
         return game.MyApplyF(CalcArmyTarget).MyApplyF(game => game with { Phase = Phase.Execution }).MyApplyA(game => UpdateAreaUI(page,game)).MyApplyF(game => Execution(page,game)).MyApplyA(game => UpdateLogMessageElem(page,game));
         static Game CalcArmyTarget(Game game) {
-          Dictionary<ECountry,EArea?> playerArmyTargetMap = game.PlayCountry.MyMaybeToList().Where(country => !Country.IsSleep(game,country)).ToDictionary(v => v,v=> game.ArmyTargetMap.GetValueOrDefault(v));
+          Dictionary<ECountry,EArea?> playerArmyTargetMap = game.PlayCountry.MyMaybeToList().Where(country => !Country.IsSleep(game,country)).ToDictionary(v => v,v => game.ArmyTargetMap.GetValueOrDefault(v));
           Dictionary<ECountry,EArea?> NPCArmyTargetMap = game.CountryMap.Keys.Except(game.PlayCountry.MyMaybeToList()).Where(country => !Country.IsSleep(game,country)).ToDictionary(country => country,country => country == ECountry.漢 ? null : RandomSelectNPCAttackTarget(game,country));
           return game with { ArmyTargetMap = new([.. NPCArmyTargetMap,.. playerArmyTargetMap]) };
           static EArea? RandomSelectNPCAttackTarget(Game game,ECountry country) => Area.GetAdjacentAnotherCountryAllAreas(game,country).MyNullable().Append(null).MyPickAny().MyApplyF(area => area?.MyApplyF(game.AreaMap.GetValueOrDefault)?.Country == null && MyRandom.RandomJudge(0.9) ? null : area);
         }
         static Game Execution(MainPage page,Game game) {
           Microsoft.UI.Dispatching.DispatcherQueue dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-          return ArmyAttack(game).MyApplyA(game => game.ArmyTargetMap.Where(v => v.Value != null).ToList().ForEach(async v => {
-            Point? srcPoint = Area.GetCapitalArea(game,v.Key)?.MyApplyF(capital => Area.GetAreaPoint(game,capital,mapSize,areaSize,mapGridCount,infoFrameWidth.Value))?.MyApplyF(v => v with { X = v.X - BasicStyle.fontsize * 2,Y = v.Y - BasicStyle.fontsize * 2 });
-            Point? dstPoint = v.Value?.MyApplyF(target => Area.GetAreaPoint(game,target,mapSize,areaSize,mapGridCount,infoFrameWidth.Value))?.MyApplyF(v => v with { X = v.X - BasicStyle.fontsize * 2,Y = v.Y - BasicStyle.fontsize * 2 });
-            Image attackImage = new() { Source = new SvgImageSource(new($"ms-appx:///Assets/Img/army.svg")),Width = BasicStyle.fontsize * 4,Height = BasicStyle.fontsize * 4 };
-            page.MapAnimationElementsCanvas.Children.Add(attackImage);
-            await Task.Run(async () => {
-              foreach(double lerpWeight in Enumerable.Range(0,100 + 1).Select(v => (double)v / 100)) {
-                dispatcher.TryEnqueue(() => {
-                  srcPoint?.MyApplyA(src => dstPoint?.MyApplyA(dst => {
-                    Canvas.SetLeft(attackImage,double.Lerp(src.X,dst.X,lerpWeight));
-                    Canvas.SetTop(attackImage,double.Lerp(src.Y,dst.Y,lerpWeight));
-                  }));
-                });
-                await Task.Delay(10);
-              }
-              dispatcher.TryEnqueue(() => UpdateAreaUI(page,game));
-            });
-          }));
+          return ArmyAttack(game).MyApplyA(game => game.ArmyTargetMap.Where(v => v.Value != null).Select(attackInfo => {
+            Point? srcPoint = Area.GetCapitalArea(game,attackInfo.Key)?.MyApplyF(capital => Area.GetAreaPoint(game,capital,mapSize,areaSize,mapGridCount,infoFrameWidth.Value));
+            Point? dstPoint = attackInfo.Value?.MyApplyF(target => Area.GetAreaPoint(game,target,mapSize,areaSize,mapGridCount,infoFrameWidth.Value));
+            string flagText= attackInfo.Key.ToString();
+            TextBlock flagTextBlock = new() { Text = flagText,RenderTransform = new ScaleTransform { ScaleX = Math.Min(1,(double)2 / flagText.Length) * 2,ScaleY = 2 },Width = Math.Min(2,flagText.Length) * BasicStyle.fontsize * 2,Height = BasicStyle.fontsize * 2 };
+            Grid flagPanel = new() { Width = BasicStyle.fontsize * 4,Height = BasicStyle.fontsize * 3,Background = new SolidColorBrush(Country.GetCountryColor(game,attackInfo.Key)),HorizontalAlignment = HorizontalAlignment.Left,VerticalAlignment = VerticalAlignment.Top };
+            Image attackImage = new() { Source = new SvgImageSource(new($"ms-appx:///Assets/Img/army.svg")),Width = BasicStyle.fontsize * 4,Height = BasicStyle.fontsize * 4,HorizontalAlignment = HorizontalAlignment.Right };
+            Grid attackImagePanel = new Grid() { Width = BasicStyle.fontsize * 6,Height = BasicStyle.fontsize * 5 }.MySetChildren([attackImage,flagPanel.MySetChildren([flagTextBlock])]);
+            page.MapAnimationElementsCanvas.Children.Add(attackImagePanel);
+            List<Point> posList = [.. Enumerable.Range(0,60 + 1).Select(v => (double)v / 60).Select(lerpWeight => srcPoint is Point src && dstPoint is Point dst ? new Point(double.Lerp(src.X,dst.X,lerpWeight) - attackImagePanel.Width / 2,double.Lerp(src.Y,dst.Y,lerpWeight) - attackImagePanel.Height / 2) : null)];
+            return (attackImagePanel, posList);
+          }).MyApplyA(v=>
+            v.ToList().ForEach(async v=>await v.posList.MyAsyncForEachSequential(async pos => {
+              dispatcher.TryEnqueue(() => {
+                Canvas.SetLeft(v.attackImagePanel,pos.X);
+                Canvas.SetTop(v.attackImagePanel,pos.Y);
+              });
+              await Task.Delay(15);
+            }))
+          )).MyApplyA(game => UpdateAreaUI(page,game));
         }
       }
       static Game EndExecutionPhase(MainPage page,Game game) {
@@ -382,7 +383,7 @@ namespace 悲愴三国志Zero2_1 {
 		static Color GetPostFrameColor(Game game,EArea? area) => area!=null&&(ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.ChinaAreas?? []).Contains(area.Value) ? Color.FromArgb(150,100,100,30) : Color.FromArgb(150,0,0,0);
 		static Grid CreatePersonPanel(MainPage page,KeyValuePair<PersonType,PersonParam> person) {
 			double minFullWidthLength = 2.25;
-			Grid panel = new Grid { Width=personPutSize.Width,Height=personPutSize.Height,Background=new SolidColorBrush(Country.GetCountryColor(game,person.Value.Country)??defaultCountryColor) }.MySetChildren([
+			Grid panel = new Grid { Width=personPutSize.Width,Height=personPutSize.Height,Background=new SolidColorBrush(Country.GetCountryColor(game,person.Value.Country)) }.MySetChildren([
 				new StackPanel { HorizontalAlignment=HorizontalAlignment.Stretch,VerticalAlignment=VerticalAlignment.Stretch,Background=new SolidColorBrush(Color.FromArgb((byte)(20*person.Value.Rank),0,0,0)) }.MySetChildren([
 						GetRankPanel(page,person),
 						new TextBlock { Text=person.Key.Value,TextAlignment=TextAlignment.Center,Margin=new(-page.FontSize*(CalcFullWidthLength(person.Key.Value)-2)/2,0,-page.FontSize*(CalcFullWidthLength(person.Key.Value)-2)/minFullWidthLength,0),RenderTransform=new ScaleTransform{ ScaleX=minFullWidthLength/Math.Max(minFullWidthLength,CalcFullWidthLength(person.Key.Value))*personNameFontScale,ScaleY=personNameFontScale,CenterX=personPutSize.Width/2+page.FontSize*(CalcFullWidthLength(person.Key.Value)-2)/minFullWidthLength  }  }
