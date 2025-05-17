@@ -14,7 +14,7 @@ namespace 悲愴三国志Zero2_1.Code {
 		internal static Dictionary<PersonType,PersonParam> GetAppearPersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsAppearPerson(game,v.Value)).ToDictionary();
 		internal static Dictionary<PersonType,PersonParam> GetAlivePersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsAlivePerson(v.Value)).ToDictionary();
 		internal static Dictionary<PersonType,PersonParam> GetWaitPostPersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsWaitPostPerson(v.Value)).ToDictionary();
-		internal static Dictionary<PersonType,PersonParam> GetDeathPostPersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsNaturalDeathPerson(Turn.GetYear(game),v.Value)).ToDictionary();
+		internal static Dictionary<PersonType,PersonParam> GetNaturalDeathPostPersonMap(Game game,ECountry country,ERole role) => GetRolePersonMap(game,country,role).Where(v => IsNaturalDeathPerson(Turn.GetYear(game),v.Value)).ToDictionary();
 		internal static KeyValuePair<PersonType,PersonParam>? GetPostPerson(Game game,ECountry country,PostType post) => game.PersonMap.MyNullable().FirstOrDefault(v => v?.Value.Country==country&&v?.Value.Post==post);
 		internal static decimal CalcRank(Game game,PersonType person,ERole role) => game.PersonMap.GetValueOrDefault(person)?.MyApplyF(param => CalcRank(param,role))??0m;
 		internal static decimal CalcRank(PersonParam personParam,ERole role) => personParam.Rank+(personParam.Role==role ? 0 : -1);
