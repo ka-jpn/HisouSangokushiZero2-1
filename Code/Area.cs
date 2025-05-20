@@ -4,9 +4,9 @@ using static 悲愴三国志Zero2_1.Code.DefType;
 using Point = 悲愴三国志Zero2_1.Code.DefType.Point;
 namespace 悲愴三国志Zero2_1.Code {
 	internal static class Area {
-		private static ScenarioData.Road[]? GetRoads(Game game) => ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.RoadConnections;
+		private static ScenarioData.Road[]? GetRoads(Game game) => game.NowScenario?.MyApplyF(ScenarioData.scenarios.GetValueOrDefault)?.RoadConnections;
 		private static Point ConvertPointFromAreaPosition(Point areaPosition,Size mapSize,Size areaSize,Point mapGridCount,double infoFrameWidth) => new(areaPosition.X*(mapSize.Width-areaSize.Width-infoFrameWidth)/(mapGridCount.X-1)+infoFrameWidth+areaSize.Width/2,areaPosition.Y*(mapSize.Height-areaSize.Height-infoFrameWidth)/(mapGridCount.Y-1)+infoFrameWidth+areaSize.Height/2);
-		internal static Point? GetAreaPoint(Game game,EArea areaName,Size mapSize,Size areaSize,Point mapGridCount,double infoFrameWidth) => ScenarioData.scenarios.GetValueOrDefault(game.NowScenario)?.AreaMap.GetValueOrDefault(areaName)?.Position.MyApplyF(areaPos => ConvertPointFromAreaPosition(areaPos,mapSize,areaSize,mapGridCount,infoFrameWidth));
+		internal static Point? GetAreaPoint(Game game,EArea areaName,Size mapSize,Size areaSize,Point mapGridCount,double infoFrameWidth) => game.NowScenario?.MyApplyF(ScenarioData.scenarios.GetValueOrDefault)?.AreaMap.GetValueOrDefault(areaName)?.Position.MyApplyF(areaPos => ConvertPointFromAreaPosition(areaPos, mapSize, areaSize, mapGridCount, infoFrameWidth));
 		internal static EArea? GetCapitalArea(Game game,ECountry countryName) => game.CountryMap.GetValueOrDefault(countryName)?.CapitalArea;
 		internal static EArea? ComputeCapitalArea(Game game,ECountry countryName) => countryName==ECountry.漢 ? null : GetCountryAreaInfoMap(game,countryName).MyNullable().MaxBy(v => v?.Value.AffairParam.AffairNow)?.Key;
 		internal static Dictionary<EArea,AreaInfo> GetCountryAreaInfoMap(Game game,ECountry country) => game.AreaMap.Where(v => v.Value.Country==country).ToDictionary();

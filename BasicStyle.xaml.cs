@@ -21,6 +21,6 @@ namespace 悲愴三国志Zero2_1 {
 	/// </summary>
 	public sealed partial class BasicStyle {
 		internal static readonly double fontsize = 24;
-		internal static readonly double textHiehgt = 25;
+		internal static readonly double textHeight = 25;
 	}
 }

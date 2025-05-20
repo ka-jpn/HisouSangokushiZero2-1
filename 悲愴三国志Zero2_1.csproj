@@ -13,7 +13,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Assets\Img\map.svg" />
+    <None Remove="Assets\Svg\map.svg" />
   </ItemGroup>
 
   <ItemGroup>

@@ -11,7 +11,7 @@ namespace 悲愴三国志Zero2_1.Code {
     public record AreaInfo(Point Position,AffairsParam AffairParam,ECountry? Country);
     public record CountryInfo(decimal Fund,int NavyLevel,Color ViewColor,Func<string> WinConditionMessageFunc,Func<bool> WinConditionJudgeFunc,Func<string> WinConditionProgressExplainFunc,int SleepTurnNum,int AnonymousPersonNum,EArea? CapitalArea = null,ECountry? PerishFrom = null);
 		internal record Commander(Person? MainPerson,Person? SubPerson);
-		public record Game(Scenario NowScenario,Dictionary<EArea,AreaInfo> AreaMap,Dictionary<ECountry,CountryInfo> CountryMap,Dictionary<Person,PersonParam> PersonMap,ECountry? PlayCountry,int? PlayTurn,int PlayerMaxCellNum,Phase Phase,Dictionary<ECountry,EArea?> ArmyTargetMap,bool IsTurnProcessing,string[] LogMessage,string[] TrunMyLog,string[] TrunOtherLog,string[] GameLog,Action? StateHasChanged=null);
+		public record Game(Scenario? NowScenario,Dictionary<EArea,AreaInfo> AreaMap,Dictionary<ECountry,CountryInfo> CountryMap,Dictionary<Person,PersonParam> PersonMap,ECountry? PlayCountry,int? PlayTurn,int PlayerMaxCellNum,Phase Phase,Dictionary<ECountry,EArea?> ArmyTargetMap,bool IsTurnProcessing,string[] LogMessage,string[] TrunMyLog,string[] TrunOtherLog,string[] GameLog,Action? StateHasChanged=null);
 		public record PostKind(PostHead? MaybeHead,int? MaybePostNo,EArea? MaybeArea) {
       public PostKind(PostHead head) : this(head,null,null) { }
       public PostKind(int postNo) : this(null,postNo,null) { }
@@ -22,7 +22,7 @@ namespace 悲愴三国志Zero2_1.Code {
     internal record AttackResult(Army Defense, AttackJudge Judge, string InvadeText);
     public enum Lang { ja };
     public enum PostHead { main, sub };
-    public enum Phase { SelectScenario, Starting, Planning, Execution };
+    public enum Phase { SelectScenario, Starting, Planning, Execution, PerishEnd, TurnLimitOverEnd };
     internal enum AttackJudge { crush, win, lose, rout };
     internal enum RoadKind { land, water };
     public enum ERole { central, affair, defense, attack };

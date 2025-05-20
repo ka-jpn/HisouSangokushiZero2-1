@@ -12,6 +12,7 @@ namespace 悲愴三国志Zero2_1 {
     /// </summary>
     public App() {
       InitializeComponent();
+      RequestedTheme = ApplicationTheme.Light;
     }
     /// <summary>
     /// Invoked when the application is launched.

@@ -20,15 +20,15 @@
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
       <Grid x:Name="MainLayoutPanel">
-        <ScrollView Grid.Row="0">
+        <ScrollViewer Grid.Row="0">
           <Grid x:Name="MapPanel">
             <Grid x:Name="MapInnerPanel" HorizontalAlignment="Left" VerticalAlignment="Top" Width="{x:Bind local:MainPage.mapSize.Width}" Height="{x:Bind local:MainPage.mapSize.Height}">
-              <Image Source="/Assets/Img/map.svg" Stretch="Fill"></Image>
+              <Image Source="/Assets/Svg/map.svg" Stretch="Fill"></Image>
               <Canvas x:Name="MapElementsCanvas"/>
               <Canvas x:Name="MapAnimationElementsCanvas"/>
             </Grid>
           </Grid>
-        </ScrollView>
+        </ScrollViewer>
         <Grid x:Name="CountryInfoPanel" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="200" Height="320" Background="#BFFF">
           <StackPanel x:Name="CountryInfoContentsPanel" VerticalAlignment="Center"/>
         </Grid>
@@ -88,7 +88,7 @@
               </Button>
             </Grid>
             <ScrollViewer x:Name="InfoScrollPanel" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="1" Grid.ColumnSpan="6">
-              <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="{x:Bind local:MainPage.infoTextWidth}">
+              <StackPanel x:Name="InfoContentPanel" HorizontalAlignment="Center" VerticalAlignment="Top" Width="{x:Bind local:MainPage.infoTextWidth}">
                 <StackPanel x:Name="InstructionPanel" Visibility="Collapsed">
 
                 </StackPanel>
@@ -253,7 +253,7 @@
                 <StackPanel x:Name="PersonDataPanel" Visibility="Collapsed">
                   <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                     <TextBlock FontWeight="Bold" Text="シナリオ１："/>
-                    <TextBlock FontWeight="Bold" Text="{x:Bind code:GameInfo.scenarios[0].Value}"/>
+                    <TextBlock x:Name="ScenarioName1" FontWeight="Bold"/>
                   </StackPanel>
                   <TextBlock Text="人物データ" HorizontalAlignment="Center"/>
                   <VariableSizedWrapGrid x:Name="PersonDataListPanel1" Orientation="Horizontal" HorizontalAlignment="Center"/>
@@ -261,7 +261,7 @@
                   <VariableSizedWrapGrid x:Name="CountryDataListPanel1" Orientation="Horizontal" HorizontalAlignment="Center"/>
                   <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                     <TextBlock FontWeight="Bold" Text="シナリオ２："/>
-                    <TextBlock FontWeight="Bold" Text="{x:Bind code:GameInfo.scenarios[1].Value}"/>
+                    <TextBlock x:Name="ScenarioName2" FontWeight="Bold"/>
                   </StackPanel>
                   <TextBlock Text="人物データ" HorizontalAlignment="Center"/>
                   <VariableSizedWrapGrid x:Name="PersonDataListPanel2" Orientation="Horizontal" HorizontalAlignment="Center"/>
@@ -292,28 +292,28 @@
         <StackPanel x:Name="CountryCentralPostPanel" Background="#EEC" Padding="1.5,0">
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
             <TextBlock Foreground="#222" Text="中枢"/>
-            <Image Source="/Assets/Img/central.svg" Width="{x:Bind local:BasicStyle.textHiehgt}" Height="{x:Bind local:BasicStyle.textHiehgt}"/>
+            <Image Source="/Assets/Svg/central.svg" Width="{x:Bind local:BasicStyle.textHeight}" Height="{x:Bind local:BasicStyle.textHeight}"/>
           </StackPanel>
           <StackPanel x:Name="CentralPanel"/>
         </StackPanel>
         <StackPanel x:Name="CountryAffairPostPanel" Background="#EEE" Padding="1.5,0">
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
             <TextBlock Foreground="#222" Text="内政"/>
-            <Image Source="/Assets/Img/affair.svg" Width="{x:Bind local:BasicStyle.textHiehgt}" Height="{x:Bind local:BasicStyle.textHiehgt}"/>
+            <Image Source="/Assets/Svg/affair.svg" Width="{x:Bind local:BasicStyle.textHeight}" Height="{x:Bind local:BasicStyle.textHeight}"/>
           </StackPanel>
           <StackPanel x:Name="AffairPanel"/>
         </StackPanel>
         <StackPanel x:Name="CountryDefensePostPanel" Background="#CCE" Padding="1.5,0">
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
             <TextBlock Foreground="#222" Text="防衛"/>
-            <Image Source="/Assets/Img/defense.svg" Width="{x:Bind local:BasicStyle.textHiehgt}" Height="{x:Bind local:BasicStyle.textHiehgt}"/>
+            <Image Source="/Assets/Svg/defense.svg" Width="{x:Bind local:BasicStyle.textHeight}" Height="{x:Bind local:BasicStyle.textHeight}"/>
           </StackPanel>
           <StackPanel x:Name="DefensePanel"/>
         </StackPanel>
         <StackPanel x:Name="CountryAttackPostPanel" Background="#ECC" Padding="1.5,0">
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
             <TextBlock Foreground="#222" Text="攻撃"/>
-            <Image Source="/Assets/Img/attack.svg" Width="{x:Bind local:BasicStyle.textHiehgt}" Height="{x:Bind local:BasicStyle.textHiehgt}"/>
+            <Image Source="/Assets/Svg/attack.svg" Width="{x:Bind local:BasicStyle.textHeight}" Height="{x:Bind local:BasicStyle.textHeight}"/>
           </StackPanel>
           <StackPanel x:Name="AttackPanel"/>
         </StackPanel>

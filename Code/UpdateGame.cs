@@ -39,14 +39,14 @@ namespace 悲愴三国志Zero2_1.Code {
 			static Game Lose(Game game,ECountry attackSide,EArea target) => SleepCountry(game,attackSide,1).MyApplyF(game => DamageArea(game,target));
 			static Game Rout(Game game,ECountry attackSide,EArea target,Army attack) => SleepCountry(game,attackSide,3).MyApplyF(game => DeathCommander(game,attack.Commander,ERole.attack)).MyApplyF(game => DamageArea(game,target));
 			static Game ChangeHasCountry(Game game,ECountry attackCountry,ECountry? defenseCountry,EArea targetArea) {
-        return AppendChangeHasCountryLog(game,attackCountry,defenseCountry,targetArea).MyApplyF(game => UpdateAreaMap(game,attackCountry,targetArea)).MyApplyF(game => MakeEmptyPost(game,targetArea)).MyApplyF(game => IsPerishCountry(game,targetArea,defenseCountry) ? PerishCountry(game,defenseCountry) : IsFallCapital(game,targetArea,defenseCountry) ? FallCapital(game,defenseCountry) : game);
+        return AppendChangeHasCountryLog(game,attackCountry,defenseCountry,targetArea).MyApplyF(game => UpdateAreaMap(game,attackCountry,targetArea)).MyApplyF(game => MakeEmptyPost(game,targetArea)).MyApplyF(game => IsPerishCountry(game,targetArea,defenseCountry) ? PerishCountry(game,attackCountry,defenseCountry) : IsFallCapital(game,targetArea,defenseCountry) ? FallCapital(game,defenseCountry) : game);
         static Game UpdateAreaMap(Game game,ECountry attackCountry,EArea targetArea) => game with { AreaMap = game.AreaMap.MyUpdate(targetArea,(_,areaInfo) => areaInfo with { Country = attackCountry }) };
         static Game MakeEmptyPost(Game game,EArea targetArea) => game with { PersonMap = game.PersonMap.ToDictionary(v => v.Key,v => v.Value.Post?.PostKind != new PostKind(targetArea) ? v.Value : v.Value with { Post = null }) };
         static bool IsPerishCountry(Game game,EArea targetArea,ECountry? defenseCountry) => defenseCountry?.MyApplyF(country => Country.GetAreaNum(game,country)) == 0;
         static bool IsFallCapital(Game game,EArea targetArea,ECountry? defenseCountry) => defenseCountry?.MyApplyF(game.CountryMap.GetValueOrDefault)?.CapitalArea == targetArea;
-        static Game PerishCountry(Game game,ECountry? defenseCountry) {
+        static Game PerishCountry(Game game,ECountry attackCountry,ECountry? defenseCountry) {
           List<PersonType> defenseCountryPerson = [.. defenseCountry?.MyApplyF(country=>Enum.GetValues<ERole>().SelectMany(role => Person.GetAlivePersonMap(game,country,role)).Select(v => v.Key))??[]];
-          return game.MyApplyF(game => AppendTurnMyLog(game,[Text.PerishCountryText(defenseCountry,Lang.ja)])).MyApplyF(game => AppendLogMessage(game,[Text.PerishCountryText(defenseCountry,Lang.ja)])).MyApplyF(game => RemoveWarDeathPersonPost(game,defenseCountryPerson));
+          return game.MyApplyF(game => AppendTurnMyLog(game,[Text.PerishCountryText(defenseCountry,Lang.ja)])).MyApplyF(game => AppendLogMessage(game,[Text.PerishCountryText(defenseCountry,Lang.ja)])).MyApplyF(game => RemoveWarDeathPersonPost(game,defenseCountryPerson)).MyApplyF(game => defenseCountry?.MyApplyF(country => game with { CountryMap = game.CountryMap.MyUpdate(country,(_,info) => info with { PerishFrom = attackCountry }) }) ?? game);
         }
         static Game FallCapital(Game game,ECountry? defenseCountry) {
           List<PersonType> defenseCountryCapitalPerson = [.. defenseCountry?.MyApplyF(country => Enum.GetValues<ERole>().SelectMany(role => Person.GetAlivePersonMap(game,country,role)).Where(v => v.Value.Post?.PostKind.MaybeArea != null).Select(v => v.Key)) ?? []];
@@ -85,7 +85,18 @@ namespace 悲愴三国志Zero2_1.Code {
 			};
 			static Game RemoveDeathPersonPost(Game game) => Turn.GetInYear(game)==BaseData.yearItems.Length/2 ? RemoveNaturalDeathPersonPost(game) : game;
 		}
-		internal static Game Attack(Game game,ECountry attackCountry,EArea targetArea,ECountry? defenseCountry,bool defenseSideFocusDefense) {
+    internal static Game GameEndJudge(Game game) {
+      return IsPerish(game) ? PerishEnd(game) : IsTurnLimitOver(game) ? TurnLimitOverEnd(game) : game;
+      static Game PerishEnd(Game game) {
+        return game with { Phase = Phase.PerishEnd };
+      }
+      static Game TurnLimitOverEnd(Game game) {
+        return game with { Phase = Phase.TurnLimitOverEnd };
+      }
+      static bool IsTurnLimitOver(Game game) => Turn.GetYear(game) >= game.NowScenario?.MyApplyF(ScenarioData.scenarios.GetValueOrDefault)?.EndYear;
+      static bool IsPerish(Game game) => game.PlayCountry?.MyApplyF(game.CountryMap.GetValueOrDefault)?.PerishFrom != null;
+    }
+    internal static Game Attack(Game game,ECountry attackCountry,EArea targetArea,ECountry? defenseCountry,bool defenseSideFocusDefense) {
 			Army attackArmy = Commander.GetAttackCommander(game,attackCountry).MyApplyF(commander => new Army(attackCountry,commander,Commander.CommanderRank(game,commander,ERole.attack)));
 			AttackResult? countryBattle = Battle.Country.Attack(game,defenseCountry,targetArea,attackArmy,defenseSideFocusDefense,Lang.ja);
 			AttackResult areaBattle = Battle.Area.Attack(game,defenseCountry,targetArea,attackArmy,defenseSideFocusDefense,Lang.ja);
